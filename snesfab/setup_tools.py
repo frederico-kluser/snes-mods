@@ -15,6 +15,8 @@ from .paths import DOWNLOADS, ROOT, TOOLS, manifest, platform_tools, toolchain
 from .util import FabError, info, read_json, rel, run, sha256_file, warn, write_json
 
 ARCHIVE_TOOLS = ("jdk", "ghidra", "mesen", "asar", "ffmpeg")
+REA_HOME = TOOLS / "rea"                                  # npm --prefix (fora do git)
+REA_PKG = REA_HOME / "node_modules" / "rea-agents"
 
 
 def _download(url: str, dest: Path) -> None:
@@ -101,15 +103,18 @@ def install_ghidra_snes(force: bool = False) -> str:
 
 
 def install_rea(force: bool = False) -> str:
+    """rea-agents fica em tools/rea (versão pinada no manifesto), como o resto do toolchain."""
     want = manifest().get("npm", {}).get("rea-agents")
-    pkg = ROOT / "node_modules" / "rea-agents" / "package.json"
+    pkg = REA_PKG / "package.json"
     if pkg.exists() and read_json(pkg).get("version") == want and not force:
         status = "ok (já instalado)"
     else:
         npm = shutil.which("npm") or shutil.which("npm.cmd")
         if not npm:
             raise FabError("npm não encontrado", "instale Node.js ≥ 22.19 (fnm/nvm) e repita `fab setup`", 3)
-        proc = run([npm, "install", "--no-audit", "--no-fund"], cwd=ROOT, timeout=900)
+        REA_HOME.mkdir(parents=True, exist_ok=True)
+        proc = run([npm, "install", "--no-audit", "--no-fund", "--save-exact", "--prefix", REA_HOME,
+                    f"rea-agents@{want}"], cwd=REA_HOME, timeout=900)
         if proc.returncode != 0:
             raise FabError(f"npm install falhou: {(proc.stdout + proc.stderr)[-1200:]}")
         status = "instalado"
@@ -141,7 +146,7 @@ def write_mcp_json() -> Path:
         "mcpServers": {
             "rea": {
                 "command": node,
-                "args": [str(ROOT / "node_modules" / "rea-agents" / "scripts" / "rea.mjs"), "mcp"],
+                "args": [str(REA_PKG / "scripts" / "rea.mjs"), "mcp"],
                 "env": {
                     "REA_ANALYSIS_PROVIDER": "ghidra",
                     "REA_MCP_INPUT_SCHEMA_PROFILE": "compact",
@@ -158,7 +163,7 @@ def write_mcp_json() -> Path:
 
 
 def copy_rea_skill() -> None:
-    src = ROOT / "node_modules" / "rea-agents" / "skills" / "reverse-engineer-anything"
+    src = REA_PKG / "skills" / "reverse-engineer-anything"
     if not src.exists():
         return
     for dest_root in (ROOT / ".claude" / "skills", ROOT / ".agents" / "skills"):
@@ -271,15 +276,18 @@ def doctor(quick: bool = False, rea: bool = False) -> dict:
     except FabError:
         add("WARN", "git", "não consegui listar arquivos")
     mcp = ROOT / ".mcp.json"
-    reapkg = ROOT / "node_modules" / "rea-agents" / "package.json"
-    add("OK" if reapkg.exists() else "WARN", "rea-agents (npm local)", read_json(reapkg).get("version") if reapkg.exists() else "fab setup")
+    reapkg = REA_PKG / "package.json"
+    add("OK" if reapkg.exists() else "WARN", "rea-agents (tools/rea)", read_json(reapkg).get("version") if reapkg.exists() else "fab setup")
     add("OK" if mcp.exists() else "WARN", ".mcp.json (REA MCP no projeto)", "presente" if mcp.exists() else "fab setup")
     if mcp.exists():
         node_cmd = json.loads(mcp.read_text(encoding="utf-8"))["mcpServers"]["rea"]["command"]
         stable = Path(node_cmd).exists() and "fnm_multishells" not in node_cmd
         add("OK" if stable else "FAIL", ".mcp.json → node", node_cmd if stable else f"{node_cmd} (temporário/inexistente) → fab setup")
+        script = json.loads(mcp.read_text(encoding="utf-8"))["mcpServers"]["rea"]["args"][0]
+        add("OK" if Path(script).exists() else "FAIL", ".mcp.json → rea.mjs",
+            rel(Path(script)) if Path(script).exists() else f"{script} não existe → fab setup")
     if rea and reapkg.exists():
-        v = run([_real_node(), ROOT / "node_modules" / "rea-agents" / "scripts" / "rea.mjs", "doctor", "--provider", "ghidra",
+        v = run([_real_node(), REA_PKG / "scripts" / "rea.mjs", "doctor", "--provider", "ghidra",
                  "--format", "json"], env={"GHIDRA_INSTALL_DIR": str(tc.ghidra_dir.resolve()), "JAVA_HOME": str(tc.java_home.resolve())},
                 timeout=300)
         try:
