@@ -1,0 +1,60 @@
+{
+  "baseline_run": "runs/baselines/testbed/pulo-simples-d2815540c7d54476",
+  "mod_run": "runs/cycles/testbed-double-jump/cycle-001-pulo-simples",
+  "frames_compared": 35,
+  "first_divergence_frame": null,
+  "frames_divergent": 0,
+  "mean_changed_pct": 0.0,
+  "max_changed_pct": 0.0,
+  "max_changed_frame": 0,
+  "compare_sheet": "cycles/testbed-double-jump/cycle-001/pulo-simples/compare.png",
+  "divergence_plot": "cycles/testbed-double-jump/cycle-001/pulo-simples/divergence.png",
+  "trace_plot": "cycles/testbed-double-jump/cycle-001/pulo-simples/trace_compare.png",
+  "trace_stats": {
+    "y": {
+      "mod": {
+        "min": 2045,
+        "max": 3072,
+        "first": 3072,
+        "last": 3072
+      },
+      "baseline": {
+        "min": 2045,
+        "max": 3072,
+        "first": 3072,
+        "last": 3072
+      },
+      "first_diff_frame": null
+    },
+    "x": {
+      "mod": {
+        "min": 64,
+        "max": 124,
+        "first": 64,
+        "last": 124
+      },
+      "baseline": {
+        "min": 64,
+        "max": 124,
+        "first": 64,
+        "last": 124
+      },
+      "first_diff_frame": null
+    },
+    "air": {
+      "mod": {
+        "min": 0,
+        "max": 1,
+        "first": 0,
+        "last": 0
+      },
+      "baseline": {
+        "min": 0,
+        "max": 1,
+        "first": 0,
+        "last": 0
+      },
+      "first_diff_frame": null
+    }
+  }
+}

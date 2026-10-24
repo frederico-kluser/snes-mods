@@ -1,0 +1,8 @@
+{
+  "name": "snes-mods",
+  "private": true,
+  "description": "Fábrica de mods de SNES — dependências Node (servidor MCP do REA, pinado)",
+  "devDependencies": {
+    "rea-agents": "6.7.0"
+  }
+}

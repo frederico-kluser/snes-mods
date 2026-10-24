@@ -1,0 +1,258 @@
+{
+  "type": "cycle",
+  "cycle": 1,
+  "time": "2026-10-24T18:49:34-03:00",
+  "note": "patch do guia, literal (capturas alinhadas)",
+  "mod": "testbed-double-jump",
+  "game": "testbed",
+  "patch_sha": {
+    "patch.asm": "813bc7b2ce0b6557"
+  },
+  "status": "ok",
+  "score": 1.0,
+  "prev_score": null,
+  "verdict_auto": "primeiro",
+  "checks_passed": 6,
+  "checks_total": 6,
+  "goal_met_by_checks": true,
+  "visual_change": true,
+  "build": {
+    "rom": "build/testbed-double-jump/testbed-double-jump.sfc",
+    "sha256": "aab4cb888f1ab278",
+    "warnings": [],
+    "hijacks_ok": true,
+    "bps": "build/testbed-double-jump/testbed-double-jump.bps"
+  },
+  "report": "cycles/testbed-double-jump/cycle-001/report.md",
+  "scenarios": [
+    {
+      "id": "pulo-duplo",
+      "state": "games/testbed/states/parado.mss",
+      "baseline_run": "runs/baselines/testbed/pulo-duplo-066853562145b6fa",
+      "baseline_cached": false,
+      "mod_run": "runs/cycles/testbed-double-jump/cycle-001-pulo-duplo",
+      "mod_sheet": "runs/cycles/testbed-double-jump/cycle-001-pulo-duplo/sheet.png",
+      "mod_video": "runs/cycles/testbed-double-jump/cycle-001-pulo-duplo/video.mp4",
+      "compare": {
+        "baseline_run": "runs/baselines/testbed/pulo-duplo-066853562145b6fa",
+        "mod_run": "runs/cycles/testbed-double-jump/cycle-001-pulo-duplo",
+        "frames_compared": 70,
+        "first_divergence_frame": 40,
+        "frames_divergent": 31,
+        "mean_changed_pct": 0.368,
+        "max_changed_pct": 0.893,
+        "max_changed_frame": 44,
+        "compare_sheet": "cycles/testbed-double-jump/cycle-001/pulo-duplo/compare.png",
+        "divergence_plot": "cycles/testbed-double-jump/cycle-001/pulo-duplo/divergence.png",
+        "trace_plot": "cycles/testbed-double-jump/cycle-001/pulo-duplo/trace_compare.png",
+        "trace_stats": {
+          "y": {
+            "mod": {
+              "min": 1294,
+              "max": 3072,
+              "first": 3072,
+              "last": 3072
+            },
+            "baseline": {
+              "min": 2045,
+              "max": 3072,
+              "first": 3072,
+              "last": 3072
+            },
+            "first_diff_frame": 39
+          },
+          "vy": {
+            "mod": {
+              "min": -77,
+              "max": 64,
+              "first": 0,
+              "last": 0
+            },
+            "baseline": {
+              "min": -77,
+              "max": 64,
+              "first": 0,
+              "last": 0
+            },
+            "first_diff_frame": 39
+          },
+          "air": {
+            "mod": {
+              "min": 0,
+              "max": 1,
+              "first": 0,
+              "last": 0
+            },
+            "baseline": {
+              "min": 0,
+              "max": 1,
+              "first": 0,
+              "last": 0
+            },
+            "first_diff_frame": 72
+          },
+          "dj": {
+            "mod": {
+              "min": 0,
+              "max": 1,
+              "first": 0,
+              "last": 0
+            },
+            "baseline": {
+              "min": 0,
+              "max": 0,
+              "first": 0,
+              "last": 0
+            },
+            "first_diff_frame": 39
+          }
+        }
+      },
+      "checks": [
+        {
+          "id": "apice-mais-alto",
+          "expr": "min(y) < baseline.min(y) - 320",
+          "desc": "o ápice sobe pelo menos 20 px a mais que o pulo original",
+          "weight": 1,
+          "passed": true,
+          "lhs": 1294,
+          "rhs": 1725
+        },
+        {
+          "id": "dois-impulsos",
+          "expr": "count(edges(vy < -60)) >= 2",
+          "desc": "há dois impulsos de subida no mesmo voo",
+          "weight": 1,
+          "passed": true,
+          "lhs": 2,
+          "rhs": 2
+        },
+        {
+          "id": "baseline-um-impulso",
+          "expr": "count(edges(baseline.vy < -60)) == 1",
+          "desc": "sanidade: o original só dá um impulso",
+          "weight": 1,
+          "passed": true,
+          "lhs": 1,
+          "rhs": 1
+        },
+        {
+          "id": "aterra",
+          "expr": "last(air) == 0",
+          "desc": "aterra antes do fim do cenário (sem softlock)",
+          "weight": 1,
+          "passed": true,
+          "lhs": 0,
+          "rhs": 0
+        },
+        {
+          "id": "flag-reinicia",
+          "expr": "max(dj) == 1 and last(dj) == 0",
+          "desc": "a flag de salto duplo é usada e reiniciada no chão",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        }
+      ],
+      "score": 1.0,
+      "hijack_mx_dynamic": {
+        "80:A420": {
+          "executions": 140,
+          "flags": {
+            "m8,x16": 140
+          },
+          "consistent": true
+        }
+      }
+    },
+    {
+      "id": "pulo-simples",
+      "state": "games/testbed/states/parado.mss",
+      "baseline_run": "runs/baselines/testbed/pulo-simples-d2815540c7d54476",
+      "baseline_cached": false,
+      "mod_run": "runs/cycles/testbed-double-jump/cycle-001-pulo-simples",
+      "mod_sheet": "runs/cycles/testbed-double-jump/cycle-001-pulo-simples/sheet.png",
+      "mod_video": "runs/cycles/testbed-double-jump/cycle-001-pulo-simples/video.mp4",
+      "compare": {
+        "baseline_run": "runs/baselines/testbed/pulo-simples-d2815540c7d54476",
+        "mod_run": "runs/cycles/testbed-double-jump/cycle-001-pulo-simples",
+        "frames_compared": 35,
+        "first_divergence_frame": null,
+        "frames_divergent": 0,
+        "mean_changed_pct": 0.0,
+        "max_changed_pct": 0.0,
+        "max_changed_frame": 0,
+        "compare_sheet": "cycles/testbed-double-jump/cycle-001/pulo-simples/compare.png",
+        "divergence_plot": "cycles/testbed-double-jump/cycle-001/pulo-simples/divergence.png",
+        "trace_plot": "cycles/testbed-double-jump/cycle-001/pulo-simples/trace_compare.png",
+        "trace_stats": {
+          "y": {
+            "mod": {
+              "min": 2045,
+              "max": 3072,
+              "first": 3072,
+              "last": 3072
+            },
+            "baseline": {
+              "min": 2045,
+              "max": 3072,
+              "first": 3072,
+              "last": 3072
+            },
+            "first_diff_frame": null
+          },
+          "x": {
+            "mod": {
+              "min": 64,
+              "max": 124,
+              "first": 64,
+              "last": 124
+            },
+            "baseline": {
+              "min": 64,
+              "max": 124,
+              "first": 64,
+              "last": 124
+            },
+            "first_diff_frame": null
+          },
+          "air": {
+            "mod": {
+              "min": 0,
+              "max": 1,
+              "first": 0,
+              "last": 0
+            },
+            "baseline": {
+              "min": 0,
+              "max": 1,
+              "first": 0,
+              "last": 0
+            },
+            "first_diff_frame": null
+          }
+        }
+      },
+      "checks": [
+        {
+          "id": "trajetoria-igual",
+          "expr": "all(y == baseline.y) and all(x == baseline.x)",
+          "desc": "o pulo simples não muda",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        }
+      ],
+      "score": 1.0,
+      "hijack_mx_dynamic": {
+        "80:A420": {
+          "executions": 140,
+          "flags": {
+            "m8,x16": 140
+          },
+          "consistent": true
+        }
+      }
+    }
+  ]
+}

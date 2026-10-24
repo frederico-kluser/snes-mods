@@ -1,0 +1,42 @@
+{
+  "id": "testbed-double-jump",
+  "title": "Pulo duplo (patch do guia REA/Asar)",
+  "game": "testbed",
+  "goal": "Permitir um segundo pulo no ar (B outra vez durante o voo), uma só vez por voo, sem alterar o pulo simples.",
+  "patches": ["patch.asm"],
+  "expand_to": null,
+  "hijacks": [
+    {"addr": "80:A420", "m": 8, "x": 16, "evidence": "sonda exec em 80:A420: ps=$26 em todas as execuções; Ghidra: SEP #$20 em 80:A41E"}
+  ],
+  "max_cycles": 8,
+  "scenarios": [
+    {
+      "id": "pulo-duplo",
+      "desc": "B no chão e B outra vez a meio da subida",
+      "state": "parado",
+      "input": "pulo_duplo.txt",
+      "frames": 140,
+      "capture": {"every": 2},
+      "watch": ["y=7E:0096:2", "vy=7E:007D:1s", "air=7E:0072", "dj=7E:1DF9"],
+      "checks": [
+        {"id": "apice-mais-alto", "expr": "min(y) < baseline.min(y) - 320", "desc": "o ápice sobe pelo menos 20 px a mais que o pulo original"},
+        {"id": "dois-impulsos", "expr": "count(edges(vy < -60)) >= 2", "desc": "há dois impulsos de subida no mesmo voo"},
+        {"id": "baseline-um-impulso", "expr": "count(edges(baseline.vy < -60)) == 1", "desc": "sanidade: o original só dá um impulso"},
+        {"id": "aterra", "expr": "last(air) == 0", "desc": "aterra antes do fim do cenário (sem softlock)"},
+        {"id": "flag-reinicia", "expr": "max(dj) == 1 and last(dj) == 0", "desc": "a flag de salto duplo é usada e reiniciada no chão"}
+      ]
+    },
+    {
+      "id": "pulo-simples",
+      "desc": "regressão: um único pulo com deslocamento",
+      "state": "parado",
+      "input": "pulo_simples.txt",
+      "frames": 140,
+      "capture": {"every": 4},
+      "watch": ["y=7E:0096:2", "x=7E:0094:2", "air=7E:0072"],
+      "checks": [
+        {"id": "trajetoria-igual", "expr": "all(y == baseline.y) and all(x == baseline.x)", "desc": "o pulo simples não muda"}
+      ]
+    }
+  ]
+}

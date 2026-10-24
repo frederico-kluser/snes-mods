@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+# fab — fábrica de mods de SNES (Git Bash / POSIX). Cria a .venv na primeira execução.
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+if [ -x "$ROOT/.venv/Scripts/python.exe" ]; then
+  PY="$ROOT/.venv/Scripts/python.exe"
+elif [ -x "$ROOT/.venv/bin/python" ]; then
+  PY="$ROOT/.venv/bin/python"
+else
+  echo "[fab] a criar .venv ..."
+  (py -3.12 -m venv "$ROOT/.venv" 2>/dev/null || python3 -m venv "$ROOT/.venv" || python -m venv "$ROOT/.venv") || exit 3
+  if [ -x "$ROOT/.venv/Scripts/python.exe" ]; then PY="$ROOT/.venv/Scripts/python.exe"; else PY="$ROOT/.venv/bin/python"; fi
+  "$PY" -m pip install --disable-pip-version-check -q -r "$ROOT/requirements.txt" || exit 3
+fi
+if command -v cygpath >/dev/null 2>&1; then PYROOT="$(cygpath -w "$ROOT")"; else PYROOT="$ROOT"; fi
+export PYTHONPATH="$PYROOT"
+export PYTHONUTF8=1
+exec "$PY" -m snesfab "$@"

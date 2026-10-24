@@ -1,0 +1,40 @@
+# ── ROMs comerciais e tudo o que deriva delas: NUNCA versionar ──
+*.sfc
+*.smc
+*.swc
+*.fig
+*.bs
+*.mss
+*.srm
+*.bps
+*.ips
+roms/
+build/
+runs/
+work/
+cycles/**/*.png
+cycles/**/*.mp4
+games/*/states/
+media/inbox/*
+!media/inbox/.gitkeep
+
+# ── toolchain local (recriado por `fab setup`; só o manifesto é versionado) ──
+tools/*
+!tools/manifest.json
+!tools/README.md
+
+# ── ambientes ──
+.venv/
+__pycache__/
+*.pyc
+node_modules/
+
+# ── gerado por `fab setup` com caminhos absolutos desta máquina ──
+.mcp.json
+
+# ── Claude Code local ──
+.claude/settings.local.json
+
+# skill do REA copiada de node_modules por `fab setup`
+.claude/skills/reverse-engineer-anything/
+.agents/skills/reverse-engineer-anything/

@@ -1,0 +1,68 @@
+{
+  "schema": 1,
+  "comment": "Toolchain pinado da fábrica. `fab setup` baixa, verifica sha256, extrai e configura. Só este ficheiro é versionado em tools/.",
+  "platforms": {
+    "windows-x64": {
+      "jdk": {
+        "version": "21.0.12.1+1",
+        "vendor": "Eclipse Temurin",
+        "url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jdk_x64_windows_hotspot_21.0.12.1_1.zip",
+        "archive": "OpenJDK21U-jdk_x64_windows_hotspot_21.0.12.1_1.zip",
+        "sha256": "f9d6e191ab098c0d416e7d588a24420a8621cd2f4720dab2459b8b7b2d2d8b4e",
+        "extract_to": ".",
+        "home": "jdk-21.0.12.1+1",
+        "exe": "bin/java.exe"
+      },
+      "ghidra": {
+        "version": "12.1.4",
+        "url": "https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_12.1.4_build/ghidra_12.1.4_PUBLIC_20260921.zip",
+        "archive": "ghidra_12.1.4_PUBLIC_20260921.zip",
+        "sha256": "ddac49f903da9d5bac833e5cc79395098b9c33cfd3279be5f31bd00387d2d4db",
+        "extract_to": ".",
+        "home": "ghidra_12.1.4_PUBLIC",
+        "exe": "support/analyzeHeadless.bat"
+      },
+      "mesen": {
+        "version": "2.2.1",
+        "vendor": "MesenCE (nesdev-org/MesenCE, sucessor do Mesen2)",
+        "url": "https://github.com/nesdev-org/MesenCE/releases/download/2.2.1/Mesen_2.2.1_Windows.zip",
+        "archive": "Mesen_2.2.1_Windows.zip",
+        "sha256": "c19e10b3b3865eb0e86e4d01bf09a5027a4452081c04b5bd5b6cbbf76e346fd6",
+        "extract_to": "mesen",
+        "home": "mesen",
+        "exe": "Mesen.exe"
+      },
+      "asar": {
+        "version": "1.91",
+        "url": "https://github.com/RPGHacker/asar/releases/download/v1.91/asar191.zip",
+        "archive": "asar191.zip",
+        "sha256": "5d40f9cfa574360d8a3f382583556ba8757435274b35207977bf1cf20397b1e7",
+        "extract_to": "asar",
+        "home": "asar",
+        "exe": "asar.exe"
+      },
+      "ffmpeg": {
+        "version": "2026-10-22-git-bf0e831606 (gyan.dev essentials)",
+        "url": "https://github.com/GyanD/codexffmpeg/releases/download/2026-10-22-git-bf0e831606/ffmpeg-2026-10-22-git-bf0e831606-essentials_build.zip",
+        "archive": "ffmpeg-2026-10-22-git-bf0e831606-essentials_build.zip",
+        "sha256": "07de5469e123c02e06959cbf7cc9e405c29f0530abde67f0721fe57dfe5e1fb4",
+        "extract_to": ".",
+        "home": "ffmpeg-2026-10-22-git-bf0e831606-essentials_build",
+        "exe": "bin/ffmpeg.exe",
+        "probe": "bin/ffprobe.exe"
+      }
+    }
+  },
+  "sources": {
+    "ghidra_snes": {
+      "repo": "https://github.com/joshleaves/ghidra-snes.git",
+      "commit": "d33ce5d",
+      "comment": "v1.3.0+2 (fixes de mirror LoROM). Recompilado contra o Ghidra pinado; extension.properties passa a usar @extversion@.",
+      "src": "src/ghidra-snes",
+      "language_id": "65816:LE:24:snes"
+    }
+  },
+  "npm": {
+    "rea-agents": "6.7.0"
+  }
+}

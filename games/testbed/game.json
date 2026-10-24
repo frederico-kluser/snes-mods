@@ -1,0 +1,68 @@
+{
+  "id": "testbed",
+  "title": "SNESFAB TESTBED",
+  "added": "2026-10-24T18:51:51-03:00",
+  "source_path": "C:\\Users\\kluse\\Projects\\snes-mods\\build\\testbed\\testbed.sfc",
+  "note": "ROM homebrew do repositório (fixtures/testbed) — material próprio",
+  "rom": {
+    "original": "roms/testbed/original.sfc",
+    "clean": "roms/testbed/testbed.sfc"
+  },
+  "smc_header": false,
+  "size": 1048576,
+  "mapping": "lorom",
+  "header": {
+    "title": "SNESFAB TESTBED",
+    "map": "lorom",
+    "map_mode": "$20 (LoROM)",
+    "fastrom": false,
+    "chipset": "$00 (ROM)",
+    "rom_size_kb": 1024,
+    "sram_size_kb": 0,
+    "region": "$01 (América do Norte)",
+    "dev_id": "$00",
+    "version": "1.0",
+    "checksum": "$72B4",
+    "checksum_complement": "$8D4B",
+    "vectors": {
+      "native_cop": "00:82E6",
+      "native_brk": "00:82E6",
+      "native_abort": "00:82E6",
+      "native_nmi": "00:82D1",
+      "native_irq": "00:82E6",
+      "emu_cop": "00:82E6",
+      "emu_abort": "00:82E6",
+      "emu_nmi": "00:82E6",
+      "emu_reset": "00:8000",
+      "emu_irqbrk": "00:82E6"
+    },
+    "extended": {},
+    "header_offset": "0x007FC0",
+    "detection_score": 9
+  },
+  "checksum": {
+    "stored": "$72B4",
+    "computed": "$72B4",
+    "valid": true
+  },
+  "hashes": {
+    "raw_sha256": "5e7ba251cc1693579094978f3f69e23cf66b9bf7a299c06c70d57c6e1169a08a",
+    "clean_sha256": "5e7ba251cc1693579094978f3f69e23cf66b9bf7a299c06c70d57c6e1169a08a",
+    "clean_sha1": "313544971297dde38ac6e18223bb7e2377f4f7f2",
+    "clean_crc32": "3d98dbae"
+  },
+  "detection": [
+    {
+      "map": "lorom",
+      "offset": "0x007FC0",
+      "score": 9,
+      "title": "SNESFAB TESTBED"
+    },
+    {
+      "map": "hirom",
+      "offset": "0x00FFC0",
+      "score": 0,
+      "title": "·····················"
+    }
+  ]
+}

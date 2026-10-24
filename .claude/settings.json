@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./fab *)",
+      "Bash(fab *)",
+      "PowerShell(.\\fab.ps1 *)",
+      "PowerShell(.\\fab.cmd *)",
+      "PowerShell(./fab.cmd *)",
+      "PowerShell(fab.cmd *)",
+      "Bash(python .agents/snes-mods-coala-agent-skill/scripts/coala.py *)",
+      "Bash(python3 .agents/snes-mods-coala-agent-skill/scripts/coala.py *)",
+      "PowerShell(python .agents/snes-mods-coala-agent-skill/scripts/coala.py *)",
+      "PowerShell(python3 .agents/snes-mods-coala-agent-skill/scripts/coala.py *)"
+    ]
+  },
+  "enabledMcpjsonServers": ["rea"]
+}
