@@ -204,10 +204,17 @@ def snes_to_pc(addr: int, mapping: str, rom_size: int | None = None) -> int:
     bank, off = (addr >> 16) & 0xFF, addr & 0xFFFF
     if bank in (0x7E, 0x7F):
         raise FabError(f"{fmt_addr(addr)} é WRAM, não ROM")
-    if mapping in ("lorom", "sa1", "sdd1"):
-        if mapping == "sa1" and bank >= 0xC0:
+    if mapping == "sa1":
+        # MMC padrão do SA-1 (o `sa1rom` do Asar): blocos de 1 MiB C/D/E/F = 0/1/2/3, vistos em
+        # $00-$1F/$20-$3F/$80-$9F/$A0-$BF:8000-FFFF (LoROM) e em $C0-$FF (HiROM). $80+ NÃO espelha $00+.
+        if bank >= 0xC0:
             pc = ((bank & 0x3F) << 16) | off
-        elif off >= 0x8000:
+        elif off >= 0x8000 and (bank <= 0x3F or 0x80 <= bank <= 0xBF):
+            pc = (0x200000 if bank >= 0x80 else 0) | ((bank & 0x3F) << 15) | (off - 0x8000)
+        else:
+            raise FabError(f"{fmt_addr(addr)} não mapeia ROM em SA-1")
+    elif mapping in ("lorom", "sdd1"):
+        if off >= 0x8000:
             pc = ((bank & 0x7F) << 15) | (off - 0x8000)
         elif 0x40 <= (bank & 0x7F) <= 0x7D and rom_size and rom_size > 0x200000:
             pc = ((bank & 0x7F) << 15) | off  # LoROM grandes espelham a metade baixa
@@ -237,17 +244,27 @@ def snes_to_pc(addr: int, mapping: str, rom_size: int | None = None) -> int:
 
 
 def pc_to_snes(pc: int, mapping: str, fast: bool = True) -> int:
-    """Offset no arquivo → endereço de CPU canônico (FastROM $80+ para LoROM, $C0+ para HiROM)."""
-    if mapping in ("lorom", "sa1", "sdd1"):
+    """Offset no arquivo → endereço de CPU canônico (FastROM $80+ para LoROM, $C0+ para HiROM; SA-1 como o
+    Asar: $00-$3F para os 2 primeiros MiB, $80-$BF para os 2 seguintes). Fora do que o mapa cobre: FabError."""
+    if mapping not in ("lorom", "sa1", "sdd1", "hirom", "exhirom"):
+        raise FabError(f"mapa desconhecido: {mapping}")
+    limit = 0x800000 if mapping == "exhirom" else 0x400000
+    if not 0 <= pc < limit:
+        raise FabError(f"0x{pc:X} está fora dos {limit >> 20} MiB que o mapa {mapping} cobre")
+    if mapping == "sa1":
+        bank = (0x80 if pc >= 0x200000 else 0) | ((pc >> 15) & 0x3F)
+        return (bank << 16) | 0x8000 | (pc & 0x7FFF)
+    if mapping in ("lorom", "sdd1"):
         bank = (pc >> 15) & 0x7F
         return ((bank | (0x80 if fast else 0)) << 16) | (0x8000 + (pc & 0x7FFF))
-    if mapping == "hirom":
+    if mapping == "hirom" or pc < 0x400000:
         return ((0xC0 | ((pc >> 16) & 0x3F)) << 16) | (pc & 0xFFFF)
-    if mapping == "exhirom":
-        if pc >= 0x400000:
-            return ((0x40 | ((pc >> 16) & 0x3F)) << 16) | (pc & 0xFFFF)
-        return ((0xC0 | ((pc >> 16) & 0x3F)) << 16) | (pc & 0xFFFF)
-    raise FabError(f"mapa desconhecido: {mapping}")
+    bank = 0x40 | ((pc >> 16) & 0x3F)                    # ExHiROM, 2.º bloco de 4 MiB
+    if bank >= 0x7E:                                     # $7E-$7F são WRAM: só a metade alta, por $3E-$3F
+        if pc & 0xFFFF < 0x8000:
+            raise FabError(f"0x{pc:X} não tem endereço de CPU em ExHiROM (metade baixa de $3E-$3F)")
+        bank &= 0x3F
+    return (bank << 16) | (pc & 0xFFFF)
 
 
 @dataclass
@@ -293,7 +310,11 @@ def load_rom(path: Path | str) -> RomImage:
     path = Path(path)
     if not path.is_file():
         raise FabError(f"ROM não encontrada: {path}", "confirme o caminho")
-    raw = path.read_bytes()
+    return parse_rom(path.read_bytes(), path)
+
+
+def parse_rom(raw: bytes, path: Path | str = "<memória>") -> RomImage:
+    """Cabeçalho SMC, mapa e cabeçalho interno de uma ROM já lida (o arquivo é entrada não confiável)."""
     if len(raw) < 0x8000:
         raise FabError(f"arquivo demasiado pequeno para ser ROM de SNES ({len(raw)} bytes)")
     had_smc = len(raw) % 1024 == SMC_HEADER
@@ -309,4 +330,4 @@ def load_rom(path: Path | str) -> RomImage:
             best = hdr
     if best is None:
         raise FabError("não encontrei cabeçalho interno de SNES", "a ROM pode estar corrompida ou intercalada")
-    return RomImage(path=path, raw=raw, data=data, had_smc_header=had_smc, header=best, candidates=cands)
+    return RomImage(path=Path(path), raw=raw, data=data, had_smc_header=had_smc, header=best, candidates=cands)

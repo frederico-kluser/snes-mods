@@ -19,7 +19,7 @@
 | LoROM | `((banco & $7F) << 15) + (addr - $8000)`, addr ≥ $8000; bancos $80+ = FastROM |
 | HiROM | `((banco & $3F) << 16) + addr` em $C0-$FF (e $40-$7D); espelho em $00-$3F/$80-$BF:$8000-$FFFF |
 | ExHiROM | $C0-$FF → primeiros 4 MB; $40-$7D → 4 MB+ |
-| SA-1 | LoROM nos bancos $00-$3F/$80-$BF + $C0-$FF linear (MMC configurável!) |
+| SA-1 | MMC padrão (`sa1rom` do Asar e do `fab`): $00-$3F:8000+ = 1.º e 2.º MiB, $80-$BF:8000+ = 3.º e 4.º MiB (**não** é espelho FastROM); $C0-$FF = os 4 MiB lineares, vista usada pelo ghidra-snes. O jogo pode reprogramar o MMC ($2220-$2223) |
 | WRAM | $7E:0000-$7F:FFFF (128 KiB); espelho $0000-$1FFF nos bancos $00-$3F/$80-$BF |
 | SRAM | LoROM: $70-$7D:$0000-$7FFF (típico) · HiROM: $20-$3F/$A0-$BF:$6000-$7FFF |
 - Cabeçalho SMC: arquivo com tamanho % 1024 == 512 → 512 bytes de copiadora no início (o `fab rom add` remove).

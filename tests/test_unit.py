@@ -1,8 +1,10 @@
 """Testes unitários (sem emulador): ROM/mapas, desmontador, macros, critérios, BPS, serialização."""
 
+import json
 import random
 import tempfile
 import unittest
+import zlib
 from pathlib import Path
 
 
@@ -10,9 +12,10 @@ from snesfab import bps
 from snesfab.checks import Evaluator, evaluate_checks, score
 from snesfab.disasm65816 import OPCODES, decode, disassemble, find_writer_before, instr_size
 from snesfab.emu import Watch, to_lua
+from snesfab.ghidra import ghidra_addr
 from snesfab.macro import mask_of, parse_macro, total_frames
 from snesfab.paths import BUILD
-from snesfab.rom import load_rom, parse_addr, pc_to_snes, snes_checksum, snes_to_pc, wram_offset
+from snesfab.rom import load_rom, parse_addr, parse_rom, pc_to_snes, snes_checksum, snes_to_pc, wram_offset
 from snesfab.util import FabError
 
 TESTBED = BUILD / "testbed" / "testbed.sfc"
@@ -38,6 +41,35 @@ class RomTests(unittest.TestCase):
             snes_to_pc(0x7E0000, "lorom")
         with self.assertRaises(FabError):
             snes_to_pc(0x801234, "lorom")
+
+    def test_sa1_como_o_asar(self):
+        # MMC padrão (o `sa1rom` do Asar): $80-$BF são os blocos 2-3, não espelhos FastROM de $00-$3F
+        self.assertEqual(snes_to_pc(0x008000, "sa1"), 0x000000)
+        self.assertEqual(snes_to_pc(0x3FFFFF, "sa1"), 0x1FFFFF)
+        self.assertEqual(snes_to_pc(0x808000, "sa1"), 0x200000)
+        self.assertEqual(snes_to_pc(0xA0B130, "sa1"), 0x303130)
+        self.assertEqual(snes_to_pc(0xE0B130, "sa1"), 0x20B130)
+        self.assertEqual(pc_to_snes(0x002420, "sa1"), 0x00A420)
+        self.assertEqual(pc_to_snes(0x303130, "sa1"), 0xA0B130)
+        self.assertEqual(ghidra_addr(0x002420, "sa1"), 0xC02420)    # o ghidra-snes usa a vista HiROM
+        self.assertEqual(ghidra_addr(0x002420, "lorom"), 0x80A420)
+        with self.assertRaises(FabError):
+            snes_to_pc(0x408000, "sa1")      # BW-RAM, não ROM
+
+    def test_pc_to_snes_ida_e_volta(self):
+        # achado pelo fuzzing (tests/fuzz/fuzz_rom.py): o endereço canônico tem de voltar ao mesmo byte
+        limits = {"lorom": 0x400000, "sdd1": 0x400000, "sa1": 0x400000, "hirom": 0x400000, "exhirom": 0x800000}
+        for mapping, limit in limits.items():
+            for pc in [*range(0, limit, 0x1357), limit - 1]:
+                if mapping == "exhirom" and pc >= 0x7E0000 and pc & 0xFFFF < 0x8000:
+                    with self.assertRaises(FabError):    # metade baixa de $3E-$3F: sem endereço de CPU
+                        pc_to_snes(pc, mapping)
+                    continue
+                self.assertEqual(snes_to_pc(pc_to_snes(pc, mapping), mapping), pc, (mapping, hex(pc)))
+            with self.assertRaises(FabError):
+                pc_to_snes(limit, mapping)
+        with self.assertRaises(FabError):
+            parse_rom(bytes(100))
 
     def test_wram_mirrors(self):
         self.assertEqual(wram_offset(0x7E007D), 0x7D)
@@ -120,6 +152,15 @@ class MacroTests(unittest.TestCase):
         with self.assertRaises(FabError):
             mask_of("Jump")
 
+    def test_limites(self):
+        # macros vêm de mods de terceiros: tamanho, aninhamento e números absurdos viram FabError
+        for bad in ("99999999x 1 B", "2x " * 12 + "1 B", "1" * 5000 + " B", "2000000 B",
+                    [[1, 30, "B"]], [[1, 0x1FFFF]], [[]], ["20 B"], [[-1, "B"]], [["x", "B"]], [[1e400, 0]]):
+            with self.assertRaises(FabError, msg=repr(bad)[:40]):
+                parse_macro(bad)
+        self.assertEqual(len(parse_macro("1000x 1 B / 1 -")), 2000)
+        self.assertEqual(parse_macro([[20, "B+Right"], [3], [1, 0x8000]]), [(20, 0x8100), (3, 0), (1, 0x8000)])
+
 
 class ChecksTests(unittest.TestCase):
     def setUp(self):
@@ -150,6 +191,20 @@ class ChecksTests(unittest.TestCase):
             with self.assertRaises(FabError, msg=bad):
                 ev.eval(bad)
 
+    def test_recursos_limitados(self):
+        # expressão patológica num mod.json vira erro do critério, nunca trava nem estoura a memória
+        exprs = ("9**9**9**9", "1 << 10**10", "'a' * 10**10", "[0] * 10**9", "(2**64)**64**64")
+        res = evaluate_checks([{"expr": e} for e in exprs], self.mod, self.base)
+        self.assertTrue(all(not r["passed"] and "error" in r for r in res), res)
+        self.assertEqual(Evaluator(self.mod).eval("2 ** 10"), 1024)
+
+    def test_relatorio_serializavel(self):
+        # achado pelo fuzzing: o resultado vai para o ledger em JSON, com tupla, inteiro enorme ou complexo
+        res = evaluate_checks([{"expr": e} for e in ("(y, 2**100)", "[y, -1] == 1", "(-8) ** 0.5", "y[0:3]")],
+                              self.mod, self.base)
+        json.dumps(res)
+        self.assertEqual(res[0]["value"][1], "<inteiro de 101 bits>")
+
 
 class BpsTests(unittest.TestCase):
     def test_roundtrip(self):
@@ -164,6 +219,36 @@ class BpsTests(unittest.TestCase):
         self.assertEqual(bps.apply(src, patch), bytes(tgt))
         with self.assertRaises(FabError):
             bps.apply(src[:-1] + b"\x00", patch)
+
+    @staticmethod
+    def _patch(src: bytes, tgt_size: int, actions: bytes, tgt_crc: bytes = bytes(4)) -> bytes:
+        crc = lambda b: (zlib.crc32(b) & 0xFFFFFFFF).to_bytes(4, "little")  # noqa: E731
+        p = b"BPS1" + bps._enc(len(src)) + bps._enc(tgt_size) + bps._enc(0) + actions + crc(src) + tgt_crc
+        return p + crc(p)
+
+    def test_patch_malformado(self):
+        # BPS de terceiros: todo defeito vira FabError (o fuzzing achou IndexError no TargetCopy)
+        src, enc = bytes(range(256)) * 4, bps._enc
+        bad = {
+            "número truncado": self._patch(src, 8, b"\x00"),
+            "número longo": self._patch(src, 8, b"\x00" * 11 + b"\x80"),
+            "alvo gigante": self._patch(src, 1 << 40, b""),
+            "TargetCopy fora do alvo": self._patch(src, 4, enc(1) + b"A" + enc((2 << 2) | 3) + enc(100 << 1)),
+            "SourceRead além da origem": self._patch(src, 2000, enc(1999 << 2)),
+            "TargetRead além do patch": self._patch(src, 64, enc((63 << 2) | 1) + b"xy"),
+            "SourceCopy negativo": self._patch(src, 8, enc((7 << 2) | 2) + enc((5 << 1) | 1)),
+            "curto": b"BPS1" + b"\x80" * 3,
+        }
+        for name, p in bad.items():
+            with self.assertRaises(FabError, msg=name):
+                bps.apply(src, p)
+
+    def test_target_copy_sobreposto(self):
+        # TargetCopy sobreposto repete o padrão (RLE), como no beat/Flips
+        src, tgt = bytes(range(256)) * 4, b"ab" * 10
+        tgt_crc = (zlib.crc32(tgt) & 0xFFFFFFFF).to_bytes(4, "little")
+        actions = bps._enc((1 << 2) | 1) + b"ab" + bps._enc((17 << 2) | 3) + bps._enc(0)
+        self.assertEqual(bps.apply(src, self._patch(src, len(tgt), actions, tgt_crc)), tgt)
 
 
 class SerializationTests(unittest.TestCase):
