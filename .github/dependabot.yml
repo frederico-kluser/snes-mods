@@ -1,5 +1,5 @@
 # Atualizações automáticas (semanais) — mensagens em Conventional Commits para passar no job `build`.
-# O toolchain pinado em tools/manifest.json (Ghidra, MesenCE, Asar, ffmpeg, JDK) é atualizado à mão,
+# O toolchain pinado em tools/manifest.json (Ghidra, MesenCE, Asar, ffmpeg, JDK, rea-agents) é atualizado à mão,
 # com novo sha256, num PR próprio.
 version: 2
 updates:
@@ -13,14 +13,6 @@ updates:
     groups:
       python:
         patterns: ["*"]
-
-  - package-ecosystem: "npm"            # rea-agents (servidor MCP do REA)
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    commit-message:
-      prefix: "build"
-      include: "scope"
 
   - package-ecosystem: "github-actions"
     directory: "/"

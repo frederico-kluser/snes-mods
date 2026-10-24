@@ -124,7 +124,7 @@ As evidências de cada endereço usado no patch estão em
 | ghidra-snes (joshleaves) | v1.3.0+2 (`d33ce5d`), recompilado | loader LoROM/HiROM/ExHiROM/SA-1 + língua `65816:LE:24:snes` |
 | Temurin JDK | 21.0.12.1 | Ghidra/gradle |
 | ffmpeg (gyan.dev) | 2026-10-22 | vídeo, extração de frames, cenas, movimento |
-| rea-agents (npm local) | 6.7.0 | servidor MCP do REA, registrado só neste projeto (`.mcp.json`) |
+| rea-agents (npm, em `tools/rea`) | 6.7.0 | servidor MCP do REA, registrado só neste projeto (`.mcp.json`) |
 | Python | 3.11+ com numpy, Pillow, matplotlib (`.venv`) | CLI `fab` |
 
 ## Decisões e desvios em relação ao guia (verificados em 2026-10-24)

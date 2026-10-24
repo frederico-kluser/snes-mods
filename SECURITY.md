@@ -67,7 +67,7 @@ Fora do escopo (reporte ao projeto de origem):
 ## Proteções do repositório
 
 - Secret scanning e **push protection** ativos.
-- **Dependabot** (pip, npm e GitHub Actions) e revisão de dependências nos PRs.
+- **Dependabot** (pip e GitHub Actions) e revisão de dependências nos PRs; o toolchain é pinado com sha256.
 - **Rulesets** na `main`: PR obrigatório, squash-only, histórico linear, sem force-push e sem
   delete, status check `build` obrigatório; nomes de branch `<tipo>/<slug>`; tags `v*` imutáveis.
 - **CodeQL** (Python) e **OpenSSF Scorecard** com resultados publicados.
