@@ -53,6 +53,37 @@ se houve evolução — até cumprir o objetivo.
 - O Ghidra não cria referências para operandos direct page: `fab re xrefs` complementa com busca textual.
 - Asar `freecode` só usa bancos $10-$3F → ROM LoROM < 1 MB precisa de `"expand_to": "1MB"`.
 
+## Governança open-source (contrato da skill `opensource-project`)
+
+Projeto público em `frederico-kluser/snes-mods`, governado pela skill **opensource-project**. Valem
+sempre, sem precisar invocar a skill (comandos em `~/.claude/skills/opensource-project/scripts/`):
+
+1. **Reentry**: antes de qualquer tarefa de governança e antes de fechar o trabalho,
+   `bash ~/.claude/skills/opensource-project/scripts/oss-enforce.sh` (verifica e aplica o que falta:
+   fundação, hooks locais, rulesets, push protection) e `oss-doctor.sh` sem `[FALTA]`.
+2. **`main` é cofre**: nunca push direto. Branch `<tipo>/<slug>` (`feat fix docs style refactor perf
+   test build ci revert hotfix release`) → PR com título Convencional → status check `build` verde →
+   **squash merge** → apagar a branch. O GitHub recusa o resto (rulesets em `.github/rulesets/`; o
+   projeto tem um mantenedor, então o PR exige 0 aprovações — suba quando houver revisores).
+3. **Commits Convencionais** (`tipo(escopo)!: descrição`, ≤ 72 caracteres) — validados pelo hook
+   `commit-msg` local e, no servidor, pelo job `build` do CI (título do PR = mensagem do squash).
+4. **Versão e changelog são gerados**: o release-please mantém o PR de release (SemVer pelos commits,
+   `CHANGELOG.md`, `__version__` em `snesfab/__init__.py`). Nunca editar à mão; tags `v*` imutáveis.
+5. **Workflows**: actions fixadas por SHA (`oss-pin-actions.sh`), `permissions` mínimas,
+   `timeout-minutes` em todo job; o `context` exigido pelo ruleset é o nome do job (`build`).
+6. **Zero segredos e zero material comercial** no código, no histórico e nos anexos
+   (`oss-gate.sh push --scan-only` antes de subir; `.gitignore` + `fab doctor` para ROMs/states).
+7. **Nunca contornar um gate** (`--no-verify`, force-push, reescrever histórico): corrigir a causa.
+   Erros no formato `Erro: <o quê> — Solução: <o que fazer>`.
+
+| pedido | procedimento |
+|---|---|
+| "commita" | `oss-gate.sh commit-msg "<msg>"` → `git commit` |
+| "sobe/push" | branch `<tipo>/<slug>` → `oss-gate.sh push` → `git push -u origin <branch>` → `gh pr create --base main` |
+| "faz merge" | `gh pr checks --watch` → `gh pr merge --squash --delete-branch` |
+| "faz release" | squash merge do PR do release-please (cria tag `vX.Y.Z` + GitHub Release) |
+| "muda CI" | editar `.github/workflows/` → `oss-pin-actions.sh` → manter o job `build` |
+
 <!-- BEGIN:coala-memory (gerido por coala-agent-skill — não editar dentro do bloco) -->
 ## Memória e catálogo do projeto (CoALA)
 
