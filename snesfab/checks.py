@@ -63,9 +63,36 @@ FUNCS = {
     "argmin": lambda s: int(np.argmin(s)), "argmax": lambda s: int(np.argmax(s)),
 }
 
-BIN = {ast.Add: op.add, ast.Sub: op.sub, ast.Mult: op.mul, ast.Div: op.truediv, ast.FloorDiv: op.floordiv,
-       ast.Mod: op.mod, ast.Pow: op.pow, ast.BitAnd: op.and_, ast.BitOr: op.or_, ast.BitXor: op.xor,
-       ast.LShift: op.lshift, ast.RShift: op.rshift}
+# Inteiros Python maiores que isto só saem de expressões patológicas: 9**9**9 ou 1 << 10**10 travariam o ciclo
+# (as séries numpy dão a volta em 64 bits e não precisam de limite).
+MAX_INT_BITS = 4096
+
+
+def _pow(a, b):
+    if isinstance(a, int) and isinstance(b, int) and b > 0 and max(abs(a).bit_length(), 1) * b > MAX_INT_BITS:
+        raise FabError(f"potência grande demais (passa de {MAX_INT_BITS} bits)")
+    return op.pow(a, b)
+
+
+def _lshift(a, b):
+    if isinstance(a, int) and isinstance(b, int) and b > MAX_INT_BITS:
+        raise FabError(f"deslocamento grande demais (passa de {MAX_INT_BITS} bits)")
+    return op.lshift(a, b)
+
+
+def _numeric(fn):
+    def run(a, b):
+        # 'a' * 10**10 ou [0] * 10**9 estourariam a memória; texto só serve de argumento, ex.: pressed('B')
+        if isinstance(a, (str, list, tuple)) or isinstance(b, (str, list, tuple)):
+            raise FabError("aritmética só com números e séries", "texto entre aspas só serve em pressed('B')")
+        return fn(a, b)
+    return run
+
+
+BIN = {k: _numeric(f) for k, f in {
+    ast.Add: op.add, ast.Sub: op.sub, ast.Mult: op.mul, ast.Div: op.truediv, ast.FloorDiv: op.floordiv,
+    ast.Mod: op.mod, ast.Pow: _pow, ast.BitAnd: op.and_, ast.BitOr: op.or_, ast.BitXor: op.xor,
+    ast.LShift: _lshift, ast.RShift: op.rshift}.items()}
 CMP = {ast.Lt: op.lt, ast.LtE: op.le, ast.Gt: op.gt, ast.GtE: op.ge, ast.Eq: op.eq, ast.NotEq: op.ne}
 
 
@@ -154,11 +181,19 @@ class Evaluator:
 
 
 def _fmt(v):
+    """Valor para o relatório: sempre serializável em JSON (o ciclo grava no ledger)."""
     if isinstance(v, np.ndarray):
         if v.size <= 6:
-            return v.tolist()
+            return _fmt(v.tolist())
         return f"série[{v.size}] min={v.min()} max={v.max()}"
-    return _num(v)
+    if isinstance(v, (list, tuple)):
+        return [_fmt(x) for x in v]
+    v = _num(v)
+    if isinstance(v, int) and not isinstance(v, bool) and v.bit_length() > 64:
+        return f"<inteiro de {v.bit_length()} bits>"
+    if v is None or isinstance(v, (bool, int, float, str)):
+        return v
+    return str(v)
 
 
 def evaluate_checks(checks: list[dict], mod_trace: dict, base_trace: dict | None) -> list[dict]:

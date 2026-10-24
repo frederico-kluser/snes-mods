@@ -54,6 +54,13 @@ def cdl_stats(data: bytes) -> dict:
             "coverage_pct": round(100 * code / max(len(data), 1), 3)}
 
 
+def ghidra_addr(pc: int, mapping: str) -> int:
+    """Endereço canônico no programa do ghidra-snes: o do pc_to_snes, exceto no SA-1, que o loader põe na
+    vista HiROM ($C0-$FF) em vez da LoROM do Asar (as duas valem no hardware com o MMC padrão)."""
+    addr = pc_to_snes(pc, mapping)
+    return 0xC00000 | pc if mapping == "sa1" else addr
+
+
 def build_seeds(game: str) -> list[tuple[int, int, int, int, str]]:
     """Sementes (endereço canônico, m8, x8, e, nome): vetores do cabeçalho + entradas do CDL."""
     img = load_rom(clean_rom(game))
@@ -62,7 +69,7 @@ def build_seeds(game: str) -> list[tuple[int, int, int, int, str]]:
 
     def canon(addr16: int, bank: int = 0x00) -> int | None:
         try:
-            return pc_to_snes(img.to_pc((bank << 16) | addr16), img.mapping)
+            return ghidra_addr(img.to_pc((bank << 16) | addr16), img.mapping)
         except FabError:
             return None
 
@@ -85,7 +92,7 @@ def build_seeds(game: str) -> list[tuple[int, int, int, int, str]]:
     if cdl:
         for pc, flags in enumerate(cdl):
             if flags & CDL_SUB and flags & CDL_CODE:
-                a = pc_to_snes(pc, img.mapping)
+                a = ghidra_addr(pc, img.mapping)
                 if a not in seeds:
                     seeds[a] = (a, int(bool(flags & CDL_M8)), int(bool(flags & CDL_X8)), 0, "")
     return sorted(seeds.values())
