@@ -78,6 +78,23 @@ python -m unittest discover -s tests -t .     # testes unitários (qualquer SO)
   `.agents/snes-mod-*`, `.agents/snes-rea-modder` e o `CLAUDE.md`/`AGENTS.md` (espelhados).
 - Workflows: actions fixadas por SHA, `permissions` mínimas e `timeout-minutes` em todo job.
 
+### Fuzzing
+
+Os parsers que recebem entrada de terceiros (patch BPS, macro, critério do `mod.json`, ROM e endereços)
+têm alvos de fuzzing em `tests/fuzz/` (atheris/libFuzzer). O CI roda cada alvo nos PRs que mexem em
+`snesfab/` e por 10 minutos toda semana. Para rodar localmente:
+
+```bash
+# Linux x86-64 ou WSL: libFuzzer guiado por cobertura (o 1.º diretório recebe as entradas novas)
+pip install --require-hashes -r requirements.txt -r requirements-fuzz.txt
+python tests/fuzz/fuzz_bps.py -max_total_time=60 work/fuzz/bps tests/fuzz/corpus/bps
+
+# Windows/macOS (sem atheris): corpus + mutações aleatórias; também reproduz um crash baixado do CI
+python tests/fuzz/fuzz_bps.py crash-0123abcd
+```
+
+Crash corrigido vira teste de regressão em `tests/test_unit.py`, e a entrada vai para `tests/fuzz/corpus/<alvo>/`.
+
 ## Revisão, merge e releases
 
 - O PR só entra com o status check `build` verde (lint + testes + mensagens convencionais) e as
