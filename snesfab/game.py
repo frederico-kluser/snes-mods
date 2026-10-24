@@ -115,7 +115,7 @@ def add_rom(src: Path, gid: str | None = None, force: bool = False, note: str = 
         "id": gid,
         "title": img.header.title,
         "added": now_iso(),
-        "source_path": str(src),
+        "source_file": src.name,  # só o nome: game.json é versionado (sem caminhos locais)
         "note": note,
         "rom": {"original": rel(orig_dest), "clean": rel(clean_dest)},
         "smc_header": img.had_smc_header,
