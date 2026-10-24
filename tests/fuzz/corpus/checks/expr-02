@@ -1,0 +1,1 @@
+count(edges(vy < -60)) >= 2

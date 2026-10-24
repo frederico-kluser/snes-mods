@@ -1,0 +1,1 @@
+count(edges(baseline.vy < -60)) == 1

@@ -1,0 +1,1 @@
+mean(window(vy, 4, 20)) > -2.5 * abs(first(vy)) // 3 % 7

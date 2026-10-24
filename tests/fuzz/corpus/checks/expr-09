@@ -1,0 +1,1 @@
+changes(clip(x, 64, 80)) <= len(delta(x)) and argmax(y) != argmin(baseline.y)

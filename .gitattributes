@@ -21,3 +21,6 @@ fab text eol=lf
 .gitattributes text eol=lf
 *.jsonl text eol=lf
 *.tsv text eol=lf
+
+# Corpus de fuzzing: bytes exatos em qualquer SO (o crash do CI tem de se reproduzir igual)
+tests/fuzz/corpus/** -text
