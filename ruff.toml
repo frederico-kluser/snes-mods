@@ -1,0 +1,4 @@
+# Lint do snesfab (CI: job "Lint"). Regras padrão do ruff (E4, E7, E9, F); linhas até 120 colunas.
+line-length = 120
+target-version = "py311"
+extend-exclude = ["tools", "node_modules", ".venv", "runs", "work", "build", ".agents/snes-mods-coala-agent-skill"]

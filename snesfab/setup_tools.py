@@ -76,7 +76,7 @@ def install_ghidra_snes(force: bool = False) -> str:
     run(["git", "-C", src, "fetch", "--quiet", "--all"], timeout=600)
     run(["git", "-C", src, "checkout", "--quiet", "--force", src_spec["commit"]], check=True)
     props = src / "extension.properties"
-    lines = [("version=@extversion@" if l.startswith("version=") else l) for l in props.read_text().splitlines()]
+    lines = [("version=@extversion@" if line.startswith("version=") else line) for line in props.read_text().splitlines()]
     props.write_text("\n".join(lines) + "\n")
     env = tc.java_env() | {"GHIDRA_INSTALL_DIR": str(tc.ghidra_dir)}
     gradlew = src / ("gradlew.bat" if platform.system() == "Windows" else "gradlew")
@@ -248,7 +248,7 @@ def doctor(quick: bool = False, rea: bool = False) -> dict:
         add("OK", "asar --version", (v.stdout or v.stderr).splitlines()[0])
     props = tc.ghidra_dir / "Ghidra" / "application.properties"
     if props.exists():
-        ver = next((l.split("=", 1)[1] for l in props.read_text().splitlines() if l.startswith("application.version=")), "?")
+        ver = next((line.split("=", 1)[1] for line in props.read_text().splitlines() if line.startswith("application.version=")), "?")
         add("OK", "ghidra", ver)
     ext = tc.ghidra_dir / "Ghidra" / "Extensions" / "ghidra-snes"
     sla = ext / "data" / "languages" / "65816.sla"

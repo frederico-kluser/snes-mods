@@ -170,7 +170,7 @@ def build_mod(mod_dir: Path, quiet: bool = False) -> dict:
         "mod": mod["id"], "game": mod["game"], "built": now_iso(),
         "rom": rel(out_rom), "asar": logs, "errors": errors, "warnings": warnings,
         "leak_warning": any("freespace_leaked" in w.lower() for w in warnings),
-        "ok": not errors and all(l["exit"] == 0 for l in logs),
+        "ok": not errors and all(entry["exit"] == 0 for entry in logs),
     }
     if not report["ok"]:
         write_json(out_dir / "build.json", report)

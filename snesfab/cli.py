@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 from . import __version__
-from .util import EXIT_FAIL, EXIT_OK, EXIT_USAGE, FabError, rel
+from .util import EXIT_FAIL, EXIT_OK, FabError, rel
 
 
 def out(obj) -> None:
@@ -29,7 +29,7 @@ def _evidence(rec: dict) -> None:
         for item in res:
             print(f"  // {item.get('entry')} {item.get('name')} (pedido {item.get('request')})")
             body = (item.get("c") or f"/* erro: {item.get('error')} */").replace("\r\n", "\n").strip("\n")
-            print("\n".join("  " + l for l in body.splitlines()))
+            print("\n".join("  " + line for line in body.splitlines()))
     elif lines_key:
         meta = {k: v for k, v in res.items() if k != lines_key}
         print("normalized_result: " + json.dumps(meta, ensure_ascii=False, default=str))
@@ -39,8 +39,8 @@ def _evidence(rec: dict) -> None:
         print("normalized_result:")
         print(json.dumps(res, indent=1, ensure_ascii=False, default=str))
     print("limitations:")
-    for l in rec["limitations"]:
-        print("  - " + l)
+    for limit in rec["limitations"]:
+        print("  - " + limit)
 
 
 # ── comandos ──────────────────────────────────────────────────────────────────
@@ -162,7 +162,7 @@ def cmd_state_boot(a):
 
 
 def cmd_run(a):
-    from .emu import Job, Probe, Watch, read_probes, read_trace, run_job, new_run_dir
+    from .emu import Job, Probe, Watch, read_trace, run_job, new_run_dir
     from .game import clean_rom, state_path
     from .investigate import _macro
     from .macro import total_frames

@@ -14,7 +14,7 @@ import re
 from pathlib import Path
 
 from . import evidence
-from .game import clean_rom, load_game
+from .game import clean_rom
 from .paths import GHIDRA_SCRIPTS, WORK, manifest, toolchain
 from .rom import fmt_addr, load_rom, parse_addr, pc_to_snes, wram_offset
 from .util import FabError, now_iso, read_json, rel, run, write_json
@@ -129,7 +129,7 @@ def analyze(game: str, timeout: int = 3600) -> dict:
     log = (proc.stdout or "") + (proc.stderr or "")
     (g / "analyze.log").write_text(log, encoding="utf-8")
     if proc.returncode != 0 or not (out / "meta.json").exists():
-        tail = "\n".join(l for l in log.splitlines() if "ERROR" in l or "Exception" in l)[-2000:]
+        tail = "\n".join(line for line in log.splitlines() if "ERROR" in line or "Exception" in line)[-2000:]
         raise FabError(f"o Ghidra falhou a analisar {game}: {tail or log[-1500:]}", f"veja {rel(g / 'analyze.log')}")
     m = re.search(r"sementes aplicadas=(\d+) falhadas=(\d+)", log)
     meta = read_json(out / "meta.json")
@@ -265,7 +265,7 @@ def q_func(game: str, addr_text: str, max_lines: int = 200) -> dict:
         i = bisect.bisect_left(ix.addrs, addr)
         for k in ix.addrs[max(0, i - 8): i + 40]:
             lines.append(ix.instr_line(ix.by_addr[k]))
-    sep_rep = [l for l in lines if " SEP " in l or " REP " in l or " PLP " in l or " XCE " in l]
+    sep_rep = [x for x in lines if any(op in x for op in (" SEP ", " REP ", " PLP ", " XCE "))]
     res = {
         "query": fmt_addr(addr),
         "function": None if not f else {
@@ -304,6 +304,6 @@ def q_decompile(game: str, addrs: list[str], timeout: int = 900) -> dict:
     proc = run(cmd, env=tc.java_env(), timeout=timeout)
     if not jl.exists():
         raise FabError(f"decompilação falhou: {(proc.stdout + proc.stderr)[-1500:]}")
-    items = [json.loads(l) for l in jl.read_text(encoding="utf-8").splitlines() if l.strip()]
+    items = [json.loads(line) for line in jl.read_text(encoding="utf-8").splitlines() if line.strip()]
     lim = evidence.STATIC_LIMITS + ["O pseudocódigo C do 65816 é uma aproximação: cruza SEMPRE com `fab re func` (instruções e M/X)."]
     return evidence.record(game, "decompile", {"addrs": hexes}, profile(game), items, lim)

@@ -1,19 +1,17 @@
 """Testes unitários (sem emulador): ROM/mapas, desmontador, macros, critérios, BPS, serialização."""
 
-import os
 import random
 import tempfile
 import unittest
 from pathlib import Path
 
-import numpy as np
 
 from snesfab import bps
 from snesfab.checks import Evaluator, evaluate_checks, score
 from snesfab.disasm65816 import OPCODES, decode, disassemble, find_writer_before, instr_size
 from snesfab.emu import Watch, to_lua
 from snesfab.macro import mask_of, parse_macro, total_frames
-from snesfab.paths import BUILD, ROOT
+from snesfab.paths import BUILD
 from snesfab.rom import load_rom, parse_addr, pc_to_snes, snes_checksum, snes_to_pc, wram_offset
 from snesfab.util import FabError
 

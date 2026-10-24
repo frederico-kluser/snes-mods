@@ -338,7 +338,7 @@ def job_from_scenario(sc: dict, base_dir: Path, game_dir: Path | None = None) ->
         return (ROOT / p).resolve()
 
     macro_src = sc.get("input", sc.get("macro"))
-    if isinstance(macro_src, str) and not ("\n" in macro_src):
+    if isinstance(macro_src, str) and "\n" not in macro_src:
         mp = resolve(macro_src)
         macro = parse_macro(mp) if mp and mp.exists() else parse_macro(macro_src)
     else:
