@@ -1,0 +1,74 @@
+# =============================================================================
+# Fuzzing — snes-mods (frederico-kluser/snes-mods)
+#
+# atheris/libFuzzer sobre os parsers que recebem entrada de terceiros: patch BPS,
+# macro de controle, critérios do mod.json e ROM/endereços (tests/fuzz/fuzz_*.py).
+# Roda nos PRs que mexem no código ou nos alvos (90 s por alvo), toda semana por
+# 10 min e sob demanda. Não é status check obrigatório: um crash aparece no PR e
+# o artefato `crashes-<alvo>` traz a entrada, que se reproduz com
+#   python tests/fuzz/fuzz_<alvo>.py <arquivo>
+# Actions fixadas por SHA; dependências instaladas com --require-hashes.
+# =============================================================================
+
+name: Fuzzing
+
+on:
+  pull_request:
+    paths:
+      - "snesfab/**"
+      - "tests/fuzz/**"
+      - "requirements.txt"
+      - "requirements-fuzz.txt"
+      - ".github/workflows/fuzz.yml"
+  schedule:
+    - cron: "23 5 * * 1"   # segunda-feira, 05:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fuzz-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fuzz:
+    name: Fuzz (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [bps, checks, macro, rom]
+    env:
+      FUZZ_SECONDS: ${{ github.event_name == 'schedule' && '600' || '90' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies (pinned by hash)
+        run: python -m pip install --disable-pip-version-check --require-hashes -r requirements.txt -r requirements-fuzz.txt
+
+      - name: Fuzz
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          # o 1.º diretório recebe as entradas novas; o corpus versionado só é lido
+          mkdir -p "work/fuzz/$TARGET" crashes
+          python "tests/fuzz/fuzz_$TARGET.py" -max_total_time="$FUZZ_SECONDS" -timeout=25 -rss_limit_mb=2048 \
+            -artifact_prefix=crashes/ "work/fuzz/$TARGET" "tests/fuzz/corpus/$TARGET"
+
+      - name: Upload crashing input
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: crashes-${{ matrix.target }}
+          path: crashes/
+          retention-days: 30

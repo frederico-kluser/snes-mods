@@ -37,6 +37,7 @@ se houve evolução — até cumprir o objetivo.
 | `lua/harness.lua` | roda dentro do MesenCE `--testRunner`: state, input, frames, RAM, sondas, CDL |
 | `ghidra_scripts/` | scripts headless: sementes M/X + análise, export TSV, descompilação |
 | `fixtures/testbed/` | ROM homebrew de teste (65816 próprio, LoROM 1 MB) |
+| `tests/` · `tests/fuzz/` | unittest (unitários + ponta a ponta) · alvos de fuzzing atheris (BPS, macro, critérios, ROM) + corpus; crash corrigido vira teste de regressão |
 | `mods/<id>/` | `mod.json` (cenários + checks), `patch.asm`, macros |
 | `games/<id>/` | `game.json`, `notes.md` (versionados) · `states/` (ignorado) |
 | `cycles/<id>/` | `ledger.jsonl` + `cycle-NNN/report.md` (imagens ignoradas pelo git) |

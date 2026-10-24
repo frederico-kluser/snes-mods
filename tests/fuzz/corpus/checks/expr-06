@@ -1,0 +1,1 @@
+any(pressed('B') & (air == 1))

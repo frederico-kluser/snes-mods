@@ -111,6 +111,7 @@ As evidências de cada endereço usado no patch estão em
 | `ghidra_scripts/` | sementes M/X + análise, export TSV e descompilação (headless) |
 | `.agents/` | skills dos agentes (`snes-mod-factory`, `snes-mod-cycle`, `snes-rea-modder`) e a memória CoALA local |
 | `fixtures/testbed/` | a ROM homebrew de teste |
+| `tests/` | testes unitários e de ponta a ponta; `tests/fuzz/`: fuzzing (atheris) dos parsers de entrada não confiável |
 | `mods/`, `games/`, `cycles/` | mods, notas por jogo e o histórico dos ciclos (sem material comercial) |
 | `tools/manifest.json` | toolchain pinado com sha256 |
 
