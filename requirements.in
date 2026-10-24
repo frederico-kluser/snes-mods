@@ -1,0 +1,5 @@
+# Dependências diretas do snesfab (Python ≥ 3.12). O lock com hashes é gerado:
+#   pip-compile --generate-hashes --strip-extras --output-file requirements.txt requirements.in
+numpy>=2.5.4
+pillow>=13.0.0
+matplotlib>=3.11.2

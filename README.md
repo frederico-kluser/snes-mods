@@ -6,7 +6,7 @@
   <a href="https://securityscorecards.dev/viewer/?uri=github.com/frederico-kluser/snes-mods"><img src="https://api.securityscorecards.dev/projects/github.com/frederico-kluser/snes-mods/badge" alt="OpenSSF Scorecard"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="Licença: MIT"></a>
   <a href="https://www.conventionalcommits.org/"><img src="https://img.shields.io/badge/Conventional%20Commits-1.0.0-fe5196.svg" alt="Conventional Commits"></a>
-  <img src="https://img.shields.io/badge/python-3.11%2B-3776AB.svg" alt="Python 3.11+">
+  <img src="https://img.shields.io/badge/python-3.12%2B-3776AB.svg" alt="Python 3.12+">
   <img src="https://img.shields.io/badge/plataforma-Windows%20x64-0078D6.svg" alt="Windows x64">
 </p>
 
@@ -55,7 +55,7 @@ ROMs; à direita, o patch de pulo duplo do guia (B no chão e B de novo no ar).<
 
 ## Instalação
 
-Requisitos: Windows 10/11 x64, Python 3.11+, Git e (opcional) Node.js ≥ 22.19 para o MCP do REA.
+Requisitos: Windows 10/11 x64, Python 3.12+, Git e (opcional) Node.js ≥ 22.19 para o MCP do REA.
 
 ```bash
 git clone https://github.com/frederico-kluser/snes-mods.git
@@ -125,7 +125,7 @@ As evidências de cada endereço usado no patch estão em
 | Temurin JDK | 21.0.12.1 | Ghidra/gradle |
 | ffmpeg (gyan.dev) | 2026-10-22 | vídeo, extração de frames, cenas, movimento |
 | rea-agents (npm, em `tools/rea`) | 6.7.0 | servidor MCP do REA, registrado só neste projeto (`.mcp.json`) |
-| Python | 3.11+ com numpy, Pillow, matplotlib (`.venv`) | CLI `fab` |
+| Python | 3.12+ com numpy, Pillow, matplotlib fixados com hash (`.venv`) | CLI `fab` |
 
 ## Decisões e desvios em relação ao guia (verificados em 2026-10-24)
 

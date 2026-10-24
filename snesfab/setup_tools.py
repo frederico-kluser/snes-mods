@@ -230,7 +230,7 @@ def doctor(quick: bool = False, rea: bool = False) -> dict:
     def add(status, name, detail=""):
         checks.append({"status": status, "check": name, "detail": detail})
 
-    add("OK" if sys.version_info >= (3, 11) else "FAIL", "python", sys.version.split()[0])
+    add("OK" if sys.version_info >= (3, 12) else "FAIL", "python", sys.version.split()[0])
     for mod in ("numpy", "PIL", "matplotlib"):
         try:
             __import__(mod)

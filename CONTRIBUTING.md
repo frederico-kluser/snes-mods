@@ -15,7 +15,7 @@ do git. Para reproduzir um problema, use a ROM homebrew do próprio repositório
 ## Ambiente
 
 Requisitos: **Windows 10/11 x64** (o toolchain pinado em `tools/manifest.json` é para `windows-x64`),
-**Python 3.11+** (3.12 recomendado), **Git** e, opcionalmente, **Node.js ≥ 22.19** (servidor MCP do REA).
+**Python 3.12+**, **Git** e, opcionalmente, **Node.js ≥ 22.19** (servidor MCP do REA).
 
 ```bash
 git clone https://github.com/<seu-usuario>/snes-mods.git
@@ -28,7 +28,8 @@ git remote add upstream https://github.com/frederico-kluser/snes-mods.git
 ```
 
 No PowerShell use `.\fab.ps1`; no cmd, `fab.cmd`. Na primeira execução o wrapper cria a `.venv`
-com `requirements.txt`. Ferramentas de desenvolvimento: `pip install -r requirements-dev.txt`.
+com `requirements.txt`. Ferramentas de desenvolvimento: `pip install -r requirements-dev.txt`. As dependências são fixadas
+com hash a partir de `requirements*.in` (`pip-compile --generate-hashes`); o Dependabot mantém os dois.
 
 **Linux/macOS**: os testes unitários rodam (`python -m unittest discover -s tests -t .`); os de ponta a
 ponta pulam porque o manifesto ainda não tem seção para essas plataformas. Contribuições que adicionem
