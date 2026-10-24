@@ -48,10 +48,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
         run: |
-          branch="release-please--branches--main"
-          if gh api "repos/$REPO/branches/$branch" --silent 2>/dev/null; then
-            gh workflow run ci.yml --repo "$REPO" --ref "$branch"
-            echo "CI disparado em $branch"
-          else
+          # o PR de release é identificado pela label do release-please (o nome da branch varia)
+          branches="$(gh pr list --repo "$REPO" --state open --label 'autorelease: pending' --json headRefName --jq '.[].headRefName')"
+          if [ -z "$branches" ]; then
             echo "sem PR de release aberto"
+            exit 0
           fi
+          for b in $branches; do
+            gh workflow run ci.yml --repo "$REPO" --ref "$b"
+            echo "CI disparado em $b"
+          done

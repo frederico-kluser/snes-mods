@@ -68,7 +68,8 @@
           "type": "generic",
           "path": "snesfab/__init__.py"
         }
-      ]
+      ],
+      "initial-version": "0.1.0"
     }
   }
 }
