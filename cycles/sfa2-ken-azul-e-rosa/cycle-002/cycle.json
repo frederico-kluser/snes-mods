@@ -1,0 +1,1767 @@
+{
+  "type": "cycle",
+  "cycle": 2,
+  "time": "2026-10-25T07:05:33-03:00",
+  "note": "ciclo 2: cor 2 (BE:82B2 lutador + BE:CEAA retrato) de branca para preta do Akuma (id 2, tons 2908 18C6 14A5 1084 1084; retrato 2908 18C6 14A5 1084 com realce); cor 0 azul e cor 1 rosa continuam; regressao cor 3 verde (2 chutes, confirmado)",
+  "mod": "sfa2-ken-azul-e-rosa",
+  "game": "sfa2",
+  "patch_sha": {
+    "patch.asm": "e36b6068e984a861"
+  },
+  "status": "ok",
+  "score": 0.9796,
+  "prev_score": 1.0,
+  "verdict_auto": "regrediu",
+  "checks_passed": 41,
+  "checks_total": 42,
+  "goal_met_by_checks": false,
+  "visual_change": true,
+  "build": {
+    "rom": "build/sfa2-ken-azul-e-rosa/sfa2-ken-azul-e-rosa.sfc",
+    "sha256": "6e468d720dd7f201",
+    "warnings": [],
+    "hijacks_ok": true,
+    "data_ok": true,
+    "data_regions": 6,
+    "bps": "build/sfa2-ken-azul-e-rosa/sfa2-ken-azul-e-rosa.bps"
+  },
+  "report": "cycles/sfa2-ken-azul-e-rosa/cycle-002/report.md",
+  "scenarios": [
+    {
+      "id": "luta-soco",
+      "state": "games/sfa2/states/luta-ken-rose-fight.mss",
+      "baseline_run": "runs/baselines/sfa2/luta-soco-f0f2e9b3e626a2bd",
+      "baseline_cached": true,
+      "mod_run": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-luta-soco",
+      "mod_sheet": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-luta-soco/sheet.png",
+      "mod_video": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-luta-soco/video.mp4",
+      "compare": {
+        "baseline_run": "runs/baselines/sfa2/luta-soco-f0f2e9b3e626a2bd",
+        "mod_run": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-luta-soco",
+        "frames_compared": 140,
+        "first_divergence_frame": 44,
+        "frames_divergent": 139,
+        "mean_changed_pct": 1.552,
+        "max_changed_pct": 1.908,
+        "max_changed_frame": 300,
+        "compare_sheet": "cycles/sfa2-ken-azul-e-rosa/cycle-002/luta-soco/compare.png",
+        "divergence_plot": "cycles/sfa2-ken-azul-e-rosa/cycle-002/luta-soco/divergence.png",
+        "trace_plot": "cycles/sfa2-ken-azul-e-rosa/cycle-002/luta-soco/trace_compare.png",
+        "trace_stats": {
+          "gi1": {
+            "mod": {
+              "min": 32262,
+              "max": 32262,
+              "first": 32262,
+              "last": 32262
+            },
+            "baseline": {
+              "min": 286,
+              "max": 286,
+              "first": 286,
+              "last": 286
+            },
+            "first_diff_frame": 0
+          },
+          "gi2": {
+            "mod": {
+              "min": 28930,
+              "max": 28930,
+              "first": 28930,
+              "last": 28930
+            },
+            "baseline": {
+              "min": 27,
+              "max": 27,
+              "first": 27,
+              "last": 27
+            },
+            "first_diff_frame": 0
+          },
+          "gi3": {
+            "mod": {
+              "min": 24737,
+              "max": 24737,
+              "first": 24737,
+              "last": 24737
+            },
+            "baseline": {
+              "min": 23,
+              "max": 23,
+              "first": 23,
+              "last": 23
+            },
+            "first_diff_frame": 0
+          },
+          "gi4": {
+            "mod": {
+              "min": 20576,
+              "max": 20576,
+              "first": 20576,
+              "last": 20576
+            },
+            "baseline": {
+              "min": 19,
+              "max": 19,
+              "first": 19,
+              "last": 19
+            },
+            "first_diff_frame": 0
+          },
+          "gi5": {
+            "mod": {
+              "min": 17472,
+              "max": 17472,
+              "first": 17472,
+              "last": 17472
+            },
+            "baseline": {
+              "min": 17,
+              "max": 17,
+              "first": 17,
+              "last": 17
+            },
+            "first_diff_frame": 0
+          },
+          "pele": {
+            "mod": {
+              "min": 12956,
+              "max": 12956,
+              "first": 12956,
+              "last": 12956
+            },
+            "baseline": {
+              "min": 12956,
+              "max": 12956,
+              "first": 12956,
+              "last": 12956
+            },
+            "first_diff_frame": null
+          },
+          "cabelo": {
+            "mod": {
+              "min": 4830,
+              "max": 4830,
+              "first": 4830,
+              "last": 4830
+            },
+            "baseline": {
+              "min": 4830,
+              "max": 4830,
+              "first": 4830,
+              "last": 4830
+            },
+            "first_diff_frame": null
+          },
+          "contorno": {
+            "mod": {
+              "min": 2114,
+              "max": 2114,
+              "first": 2114,
+              "last": 2114
+            },
+            "baseline": {
+              "min": 2114,
+              "max": 2114,
+              "first": 2114,
+              "last": 2114
+            },
+            "first_diff_frame": null
+          },
+          "hadouken": {
+            "mod": {
+              "min": 31710,
+              "max": 31710,
+              "first": 31710,
+              "last": 31710
+            },
+            "baseline": {
+              "min": 31710,
+              "max": 31710,
+              "first": 31710,
+              "last": 31710
+            },
+            "first_diff_frame": null
+          },
+          "rose": {
+            "mod": {
+              "min": 4104,
+              "max": 4104,
+              "first": 4104,
+              "last": 4104
+            },
+            "baseline": {
+              "min": 4104,
+              "max": 4104,
+              "first": 4104,
+              "last": 4104
+            },
+            "first_diff_frame": null
+          },
+          "x1": {
+            "mod": {
+              "min": 283,
+              "max": 465,
+              "first": 283,
+              "last": 465
+            },
+            "baseline": {
+              "min": 283,
+              "max": 465,
+              "first": 283,
+              "last": 465
+            },
+            "first_diff_frame": null
+          },
+          "hp1": {
+            "mod": {
+              "min": 119,
+              "max": 144,
+              "first": 144,
+              "last": 119
+            },
+            "baseline": {
+              "min": 119,
+              "max": 144,
+              "first": 144,
+              "last": 119
+            },
+            "first_diff_frame": null
+          },
+          "hp2": {
+            "mod": {
+              "min": 129,
+              "max": 144,
+              "first": 144,
+              "last": 129
+            },
+            "baseline": {
+              "min": 129,
+              "max": 144,
+              "first": 144,
+              "last": 129
+            },
+            "first_diff_frame": null
+          }
+        }
+      },
+      "checks": [
+        {
+          "id": "gi-azul",
+          "expr": "all((baseline.gi1 != 0x011E) | ((gi1 == 0x7E06) & (gi2 == 0x7102) & (gi3 == 0x60A1) & (gi4 == 0x5060) & (gi5 == 0x4440)))",
+          "desc": "cor 0: onde o original mostra o gi vermelho, o mod mostra os 5 tons azuis",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "gi-normal-na-tela",
+          "expr": "count(baseline.gi1 == 0x011E) >= 0.8 * len(gi1)",
+          "desc": "sanidade: o cenário mostra a cor 0 na maior parte do tempo",
+          "weight": 1,
+          "passed": true,
+          "lhs": 560,
+          "rhs": 448.0
+        },
+        {
+          "id": "efeitos-iguais",
+          "expr": "all((baseline.gi1 == 0x011E) | (gi1 == baseline.gi1))",
+          "desc": "nas paletas de efeito o mod é igual ao original",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "pele-cabelo-faixa",
+          "expr": "all(pele == baseline.pele) and all(cabelo == baseline.cabelo) and all(contorno == baseline.contorno)",
+          "desc": "o resto da paleta do Ken não muda",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "hadouken-e-rose",
+          "expr": "all(hadouken == baseline.hadouken) and all(rose == baseline.rose)",
+          "desc": "Hadouken e Rose intactos",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "logica-igual",
+          "expr": "all(x1 == baseline.x1) and all(hp1 == baseline.hp1) and all(hp2 == baseline.hp2)",
+          "desc": "a luta transcorre igual (só muda cor)",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        }
+      ],
+      "score": 1.0,
+      "hijack_mx_dynamic": {}
+    },
+    {
+      "id": "luta-rosa",
+      "state": "games/sfa2/states/luta-ken-chute-fight.mss",
+      "baseline_run": "runs/baselines/sfa2/luta-rosa-02880959176e9369",
+      "baseline_cached": true,
+      "mod_run": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-luta-rosa",
+      "mod_sheet": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-luta-rosa/sheet.png",
+      "mod_video": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-luta-rosa/video.mp4",
+      "compare": {
+        "baseline_run": "runs/baselines/sfa2/luta-rosa-02880959176e9369",
+        "mod_run": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-luta-rosa",
+        "frames_compared": 140,
+        "first_divergence_frame": 44,
+        "frames_divergent": 139,
+        "mean_changed_pct": 1.552,
+        "max_changed_pct": 1.908,
+        "max_changed_frame": 300,
+        "compare_sheet": "cycles/sfa2-ken-azul-e-rosa/cycle-002/luta-rosa/compare.png",
+        "divergence_plot": "cycles/sfa2-ken-azul-e-rosa/cycle-002/luta-rosa/divergence.png",
+        "trace_plot": "cycles/sfa2-ken-azul-e-rosa/cycle-002/luta-rosa/trace_compare.png",
+        "trace_stats": {
+          "gi1": {
+            "mod": {
+              "min": 27356,
+              "max": 27356,
+              "first": 27356,
+              "last": 27356
+            },
+            "baseline": {
+              "min": 22800,
+              "max": 22800,
+              "first": 22800,
+              "last": 22800
+            },
+            "first_diff_frame": 0
+          },
+          "gi2": {
+            "mod": {
+              "min": 21022,
+              "max": 21022,
+              "first": 21022,
+              "last": 21022
+            },
+            "baseline": {
+              "min": 18572,
+              "max": 18572,
+              "first": 18572,
+              "last": 18572
+            },
+            "first_diff_frame": 0
+          },
+          "gi3": {
+            "mod": {
+              "min": 16796,
+              "max": 16796,
+              "first": 16796,
+              "last": 16796
+            },
+            "baseline": {
+              "min": 16458,
+              "max": 16458,
+              "first": 16458,
+              "last": 16458
+            },
+            "first_diff_frame": 0
+          },
+          "gi4": {
+            "mod": {
+              "min": 12570,
+              "max": 12570,
+              "first": 12570,
+              "last": 12570
+            },
+            "baseline": {
+              "min": 14376,
+              "max": 14376,
+              "first": 14376,
+              "last": 14376
+            },
+            "first_diff_frame": 0
+          },
+          "gi5": {
+            "mod": {
+              "min": 8344,
+              "max": 8344,
+              "first": 8344,
+              "last": 8344
+            },
+            "baseline": {
+              "min": 12294,
+              "max": 12294,
+              "first": 12294,
+              "last": 12294
+            },
+            "first_diff_frame": 0
+          },
+          "pele": {
+            "mod": {
+              "min": 12956,
+              "max": 12956,
+              "first": 12956,
+              "last": 12956
+            },
+            "baseline": {
+              "min": 12956,
+              "max": 12956,
+              "first": 12956,
+              "last": 12956
+            },
+            "first_diff_frame": null
+          },
+          "cabelo": {
+            "mod": {
+              "min": 4958,
+              "max": 4958,
+              "first": 4958,
+              "last": 4958
+            },
+            "baseline": {
+              "min": 4958,
+              "max": 4958,
+              "first": 4958,
+              "last": 4958
+            },
+            "first_diff_frame": null
+          },
+          "contorno": {
+            "mod": {
+              "min": 2114,
+              "max": 2114,
+              "first": 2114,
+              "last": 2114
+            },
+            "baseline": {
+              "min": 2114,
+              "max": 2114,
+              "first": 2114,
+              "last": 2114
+            },
+            "first_diff_frame": null
+          },
+          "hadouken": {
+            "mod": {
+              "min": 31710,
+              "max": 31710,
+              "first": 31710,
+              "last": 31710
+            },
+            "baseline": {
+              "min": 31710,
+              "max": 31710,
+              "first": 31710,
+              "last": 31710
+            },
+            "first_diff_frame": null
+          },
+          "rose": {
+            "mod": {
+              "min": 4104,
+              "max": 4104,
+              "first": 4104,
+              "last": 4104
+            },
+            "baseline": {
+              "min": 4104,
+              "max": 4104,
+              "first": 4104,
+              "last": 4104
+            },
+            "first_diff_frame": null
+          },
+          "x1": {
+            "mod": {
+              "min": 283,
+              "max": 465,
+              "first": 283,
+              "last": 465
+            },
+            "baseline": {
+              "min": 283,
+              "max": 465,
+              "first": 283,
+              "last": 465
+            },
+            "first_diff_frame": null
+          },
+          "hp1": {
+            "mod": {
+              "min": 119,
+              "max": 144,
+              "first": 144,
+              "last": 119
+            },
+            "baseline": {
+              "min": 119,
+              "max": 144,
+              "first": 144,
+              "last": 119
+            },
+            "first_diff_frame": null
+          },
+          "hp2": {
+            "mod": {
+              "min": 129,
+              "max": 144,
+              "first": 144,
+              "last": 129
+            },
+            "baseline": {
+              "min": 129,
+              "max": 144,
+              "first": 144,
+              "last": 129
+            },
+            "first_diff_frame": null
+          }
+        }
+      },
+      "checks": [
+        {
+          "id": "gi-rosa",
+          "expr": "all((baseline.gi1 != 0x5910) | ((gi1 == 0x6ADC) & (gi2 == 0x521E) & (gi3 == 0x419C) & (gi4 == 0x311A) & (gi5 == 0x2098)))",
+          "desc": "cor 1: onde o original mostra o gi roxo, o mod mostra os 5 tons do Dan",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "gi-roxo-na-tela",
+          "expr": "count(baseline.gi1 == 0x5910) >= 0.8 * len(gi1)",
+          "desc": "sanidade: o cenário mostra mesmo a cor 1",
+          "weight": 1,
+          "passed": true,
+          "lhs": 560,
+          "rhs": 448.0
+        },
+        {
+          "id": "efeitos-iguais",
+          "expr": "all((baseline.gi1 == 0x5910) | (gi1 == baseline.gi1))",
+          "desc": "nas paletas de efeito o mod é igual ao original",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "pele-cabelo-faixa",
+          "expr": "all(pele == baseline.pele) and all(cabelo == baseline.cabelo) and all(contorno == baseline.contorno)",
+          "desc": "o resto da paleta do Ken não muda",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "hadouken-e-rose",
+          "expr": "all(hadouken == baseline.hadouken) and all(rose == baseline.rose)",
+          "desc": "Hadouken e Rose intactos",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "logica-igual",
+          "expr": "all(x1 == baseline.x1) and all(hp1 == baseline.hp1) and all(hp2 == baseline.hp2)",
+          "desc": "a luta transcorre igual (só muda cor)",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        }
+      ],
+      "score": 1.0,
+      "hijack_mx_dynamic": {}
+    },
+    {
+      "id": "luta-preta",
+      "state": "games/sfa2/states/luta-ken-2socos-fight.mss",
+      "baseline_run": "runs/baselines/sfa2/luta-preta-009fa0041830d601",
+      "baseline_cached": false,
+      "mod_run": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-luta-preta",
+      "mod_sheet": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-luta-preta/sheet.png",
+      "mod_video": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-luta-preta/video.mp4",
+      "compare": {
+        "baseline_run": "runs/baselines/sfa2/luta-preta-009fa0041830d601",
+        "mod_run": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-luta-preta",
+        "frames_compared": 140,
+        "first_divergence_frame": 44,
+        "frames_divergent": 139,
+        "mean_changed_pct": 1.552,
+        "max_changed_pct": 1.908,
+        "max_changed_frame": 300,
+        "compare_sheet": "cycles/sfa2-ken-azul-e-rosa/cycle-002/luta-preta/compare.png",
+        "divergence_plot": "cycles/sfa2-ken-azul-e-rosa/cycle-002/luta-preta/divergence.png",
+        "trace_plot": "cycles/sfa2-ken-azul-e-rosa/cycle-002/luta-preta/trace_compare.png",
+        "trace_stats": {
+          "gi1": {
+            "mod": {
+              "min": 10504,
+              "max": 10504,
+              "first": 10504,
+              "last": 10504
+            },
+            "baseline": {
+              "min": 31710,
+              "max": 31710,
+              "first": 31710,
+              "last": 31710
+            },
+            "first_diff_frame": 0
+          },
+          "gi2": {
+            "mod": {
+              "min": 6342,
+              "max": 6342,
+              "first": 6342,
+              "last": 6342
+            },
+            "baseline": {
+              "min": 31576,
+              "max": 31576,
+              "first": 31576,
+              "last": 31576
+            },
+            "first_diff_frame": 0
+          },
+          "gi3": {
+            "mod": {
+              "min": 5285,
+              "max": 5285,
+              "first": 5285,
+              "last": 5285
+            },
+            "baseline": {
+              "min": 31444,
+              "max": 31444,
+              "first": 31444,
+              "last": 31444
+            },
+            "first_diff_frame": 0
+          },
+          "gi4": {
+            "mod": {
+              "min": 4228,
+              "max": 4228,
+              "first": 4228,
+              "last": 4228
+            },
+            "baseline": {
+              "min": 27216,
+              "max": 27216,
+              "first": 27216,
+              "last": 27216
+            },
+            "first_diff_frame": 0
+          },
+          "gi5": {
+            "mod": {
+              "min": 4228,
+              "max": 4228,
+              "first": 4228,
+              "last": 4228
+            },
+            "baseline": {
+              "min": 20876,
+              "max": 20876,
+              "first": 20876,
+              "last": 20876
+            },
+            "first_diff_frame": 0
+          },
+          "pele": {
+            "mod": {
+              "min": 12892,
+              "max": 12892,
+              "first": 12892,
+              "last": 12892
+            },
+            "baseline": {
+              "min": 12892,
+              "max": 12892,
+              "first": 12892,
+              "last": 12892
+            },
+            "first_diff_frame": null
+          },
+          "cabelo": {
+            "mod": {
+              "min": 13214,
+              "max": 13214,
+              "first": 13214,
+              "last": 13214
+            },
+            "baseline": {
+              "min": 13214,
+              "max": 13214,
+              "first": 13214,
+              "last": 13214
+            },
+            "first_diff_frame": null
+          },
+          "contorno": {
+            "mod": {
+              "min": 2114,
+              "max": 2114,
+              "first": 2114,
+              "last": 2114
+            },
+            "baseline": {
+              "min": 2114,
+              "max": 2114,
+              "first": 2114,
+              "last": 2114
+            },
+            "first_diff_frame": null
+          },
+          "hadouken": {
+            "mod": {
+              "min": 31710,
+              "max": 31710,
+              "first": 31710,
+              "last": 31710
+            },
+            "baseline": {
+              "min": 31710,
+              "max": 31710,
+              "first": 31710,
+              "last": 31710
+            },
+            "first_diff_frame": null
+          },
+          "rose": {
+            "mod": {
+              "min": 4104,
+              "max": 4104,
+              "first": 4104,
+              "last": 4104
+            },
+            "baseline": {
+              "min": 4104,
+              "max": 4104,
+              "first": 4104,
+              "last": 4104
+            },
+            "first_diff_frame": null
+          },
+          "x1": {
+            "mod": {
+              "min": 283,
+              "max": 465,
+              "first": 283,
+              "last": 465
+            },
+            "baseline": {
+              "min": 283,
+              "max": 465,
+              "first": 283,
+              "last": 465
+            },
+            "first_diff_frame": null
+          },
+          "hp1": {
+            "mod": {
+              "min": 119,
+              "max": 144,
+              "first": 144,
+              "last": 119
+            },
+            "baseline": {
+              "min": 119,
+              "max": 144,
+              "first": 144,
+              "last": 119
+            },
+            "first_diff_frame": null
+          },
+          "hp2": {
+            "mod": {
+              "min": 129,
+              "max": 144,
+              "first": 144,
+              "last": 129
+            },
+            "baseline": {
+              "min": 129,
+              "max": 144,
+              "first": 144,
+              "last": 129
+            },
+            "first_diff_frame": null
+          }
+        }
+      },
+      "checks": [
+        {
+          "id": "gi-preta",
+          "expr": "all((baseline.gi1 != 0x7BDE) | ((gi1 == 0x2908) & (gi2 == 0x18C6) & (gi3 == 0x14A5) & (gi4 == 0x1084) & (gi5 == 0x1084)))",
+          "desc": "cor 2: onde o original mostra o gi branco, o mod mostra os 5 tons do Akuma",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "gi-branco-na-tela",
+          "expr": "count(baseline.gi1 == 0x7BDE) >= 0.8 * len(gi1)",
+          "desc": "sanidade: o cenário mostra mesmo a cor 2",
+          "weight": 1,
+          "passed": true,
+          "lhs": 560,
+          "rhs": 448.0
+        },
+        {
+          "id": "efeitos-iguais",
+          "expr": "all((baseline.gi1 == 0x7BDE) | (gi1 == baseline.gi1))",
+          "desc": "nas paletas de efeito o mod é igual ao original",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "pele-cabelo-faixa",
+          "expr": "all(pele == baseline.pele) and all(cabelo == baseline.cabelo) and all(contorno == baseline.contorno)",
+          "desc": "o resto da paleta do Ken não muda",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "hadouken-e-rose",
+          "expr": "all(hadouken == baseline.hadouken) and all(rose == baseline.rose)",
+          "desc": "Hadouken e Rose intactos",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "logica-igual",
+          "expr": "all(x1 == baseline.x1) and all(hp1 == baseline.hp1) and all(hp2 == baseline.hp2)",
+          "desc": "a luta transcorre igual (só muda cor)",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        }
+      ],
+      "score": 1.0,
+      "hijack_mx_dynamic": {}
+    },
+    {
+      "id": "selecao-e-vs",
+      "state": "games/sfa2/states/selecao.mss",
+      "baseline_run": "runs/baselines/sfa2/selecao-e-vs-772fe8929a721d3e",
+      "baseline_cached": true,
+      "mod_run": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-selecao-e-vs",
+      "mod_sheet": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-selecao-e-vs/sheet.png",
+      "mod_video": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-selecao-e-vs/video.mp4",
+      "compare": {
+        "baseline_run": "runs/baselines/sfa2/selecao-e-vs-772fe8929a721d3e",
+        "mod_run": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-selecao-e-vs",
+        "frames_compared": 110,
+        "first_divergence_frame": 80,
+        "frames_divergent": 88,
+        "mean_changed_pct": 2.557,
+        "max_changed_pct": 5.824,
+        "max_changed_frame": 80,
+        "compare_sheet": "cycles/sfa2-ken-azul-e-rosa/cycle-002/selecao-e-vs/compare.png",
+        "divergence_plot": "cycles/sfa2-ken-azul-e-rosa/cycle-002/selecao-e-vs/divergence.png",
+        "trace_plot": "cycles/sfa2-ken-azul-e-rosa/cycle-002/selecao-e-vs/trace_compare.png",
+        "trace_stats": {
+          "ret1": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 208,
+              "last": 0
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 208,
+              "last": 0
+            },
+            "first_diff_frame": 74
+          },
+          "ret2": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 42,
+              "last": 0
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 42,
+              "last": 0
+            },
+            "first_diff_frame": 74
+          },
+          "ret3": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 90,
+              "last": 0
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 90,
+              "last": 0
+            },
+            "first_diff_frame": 74
+          },
+          "ret4": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 18,
+              "last": 4302
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 18,
+              "last": 4302
+            },
+            "first_diff_frame": 74
+          },
+          "retpele": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 12,
+              "last": 76
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 12,
+              "last": 76
+            },
+            "first_diff_frame": null
+          },
+          "spr1": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 31710,
+              "last": 0
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 31710,
+              "last": 0
+            },
+            "first_diff_frame": 73
+          },
+          "vs1": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 6484,
+              "last": 32262
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 6484,
+              "last": 4414
+            },
+            "first_diff_frame": 962
+          },
+          "vs2": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 4303,
+              "last": 28930
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 4303,
+              "last": 3195
+            },
+            "first_diff_frame": 962
+          },
+          "vs3": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 3114,
+              "last": 22657
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 3114,
+              "last": 2133
+            },
+            "first_diff_frame": 962
+          },
+          "vs4": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 19,
+              "last": 15392
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 19,
+              "last": 15
+            },
+            "first_diff_frame": 962
+          }
+        }
+      },
+      "checks": [
+        {
+          "id": "retrato-azul",
+          "expr": "all((baseline.ret1 != 0x113E) | ((ret1 == 0x7E06) & (ret2 == 0x7102) & (ret3 == 0x5881) & (ret4 == 0x3C20)))",
+          "desc": "retrato da seleção com gi azul",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "outros-retratos-iguais",
+          "expr": "all((baseline.ret1 == 0x113E) | (ret1 == baseline.ret1))",
+          "desc": "Ryu, Adon, Chun-Li e Guy iguais ao original",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "vs-azul",
+          "expr": "all((baseline.vs1 != 0x113E) | ((vs1 == 0x7E06) & (vs2 == 0x7102) & (vs3 == 0x5881) & (vs4 == 0x3C20)))",
+          "desc": "retrato da tela VS com gi azul",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "sprite-selecao-azul",
+          "expr": "all((baseline.spr1 != 0x011E) | (spr1 == 0x7E06))",
+          "desc": "o sprite pequeno da seleção também",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "retratos-na-tela",
+          "expr": "count(baseline.ret1 == 0x113E) >= 20 and count(baseline.vs1 == 0x113E) >= 20",
+          "desc": "sanidade: o Ken aparece na seleção e na VS",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "pele-retrato",
+          "expr": "all(retpele == baseline.retpele)",
+          "desc": "a pele do retrato não muda",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        }
+      ],
+      "score": 1.0,
+      "hijack_mx_dynamic": {}
+    },
+    {
+      "id": "selecao-e-vs-rosa",
+      "state": "games/sfa2/states/selecao.mss",
+      "baseline_run": "runs/baselines/sfa2/selecao-e-vs-rosa-8d805d31399a1640",
+      "baseline_cached": true,
+      "mod_run": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-selecao-e-vs-rosa",
+      "mod_sheet": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-selecao-e-vs-rosa/sheet.png",
+      "mod_video": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-selecao-e-vs-rosa/video.mp4",
+      "compare": {
+        "baseline_run": "runs/baselines/sfa2/selecao-e-vs-rosa-8d805d31399a1640",
+        "mod_run": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-selecao-e-vs-rosa",
+        "frames_compared": 110,
+        "first_divergence_frame": 80,
+        "frames_divergent": 88,
+        "mean_changed_pct": 2.557,
+        "max_changed_pct": 5.824,
+        "max_changed_frame": 80,
+        "compare_sheet": "cycles/sfa2-ken-azul-e-rosa/cycle-002/selecao-e-vs-rosa/compare.png",
+        "divergence_plot": "cycles/sfa2-ken-azul-e-rosa/cycle-002/selecao-e-vs-rosa/divergence.png",
+        "trace_plot": "cycles/sfa2-ken-azul-e-rosa/cycle-002/selecao-e-vs-rosa/trace_compare.png",
+        "trace_stats": {
+          "ret1": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 208,
+              "last": 0
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 208,
+              "last": 0
+            },
+            "first_diff_frame": 74
+          },
+          "ret2": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 42,
+              "last": 0
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 42,
+              "last": 0
+            },
+            "first_diff_frame": 74
+          },
+          "ret3": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 90,
+              "last": 0
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 90,
+              "last": 0
+            },
+            "first_diff_frame": 74
+          },
+          "ret4": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 18,
+              "last": 4302
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 18,
+              "last": 4302
+            },
+            "first_diff_frame": 74
+          },
+          "retpele": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 12,
+              "last": 76
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 12,
+              "last": 76
+            },
+            "first_diff_frame": null
+          },
+          "spr1": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 31710,
+              "last": 0
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 31710,
+              "last": 0
+            },
+            "first_diff_frame": 73
+          },
+          "vs1": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 6484,
+              "last": 21022
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 6484,
+              "last": 26962
+            },
+            "first_diff_frame": 962
+          },
+          "vs2": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 4303,
+              "last": 16796
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 4303,
+              "last": 20686
+            },
+            "first_diff_frame": 962
+          },
+          "vs3": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 3114,
+              "last": 12570
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 3114,
+              "last": 16458
+            },
+            "first_diff_frame": 962
+          },
+          "vs4": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 19,
+              "last": 8344
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 19,
+              "last": 12294
+            },
+            "first_diff_frame": 962
+          }
+        }
+      },
+      "checks": [
+        {
+          "id": "retrato-rosa",
+          "expr": "all((baseline.ret1 != 0x6952) | ((ret1 == 0x521E) & (ret2 == 0x419C) & (ret3 == 0x311A) & (ret4 == 0x2098)))",
+          "desc": "retrato da seleção (cor 1) com rosa do Dan",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "retrato-cor0-azul",
+          "expr": "all((baseline.ret1 != 0x113E) | ((ret1 == 0x7E06) & (ret2 == 0x7102) & (ret3 == 0x5881) & (ret4 == 0x3C20)))",
+          "desc": "o preview antes do botão (cor 0) fica azul",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "vs-rosa",
+          "expr": "all((baseline.vs1 != 0x6952) | ((vs1 == 0x521E) & (vs2 == 0x419C) & (vs3 == 0x311A) & (vs4 == 0x2098)))",
+          "desc": "retrato da tela VS (cor 1) com rosa do Dan",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "sprite-rosa",
+          "expr": "all((baseline.spr1 != 0x5910) | (spr1 == 0x6ADC))",
+          "desc": "o sprite pequeno da seleção (cor 1) também",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "outros-retratos-iguais",
+          "expr": "all((baseline.ret1 == 0x6952) | (baseline.ret1 == 0x113E) | (ret1 == baseline.ret1))",
+          "desc": "Ryu, Adon, Chun-Li e Guy iguais ao original",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "retratos-na-tela",
+          "expr": "count(baseline.ret1 == 0x6952) >= 20 and count(baseline.vs1 == 0x6952) >= 20",
+          "desc": "sanidade: o Ken de cor 1 aparece na seleção e na VS",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "pele-retrato",
+          "expr": "all(retpele == baseline.retpele)",
+          "desc": "a pele do retrato não muda",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        }
+      ],
+      "score": 1.0,
+      "hijack_mx_dynamic": {}
+    },
+    {
+      "id": "selecao-e-vs-preta",
+      "state": "games/sfa2/states/selecao.mss",
+      "baseline_run": "runs/baselines/sfa2/selecao-e-vs-preta-aec7801eee2867f4",
+      "baseline_cached": false,
+      "mod_run": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-selecao-e-vs-preta",
+      "mod_sheet": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-selecao-e-vs-preta/sheet.png",
+      "mod_video": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-selecao-e-vs-preta/video.mp4",
+      "compare": {
+        "baseline_run": "runs/baselines/sfa2/selecao-e-vs-preta-aec7801eee2867f4",
+        "mod_run": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-selecao-e-vs-preta",
+        "frames_compared": 110,
+        "first_divergence_frame": 80,
+        "frames_divergent": 88,
+        "mean_changed_pct": 2.557,
+        "max_changed_pct": 5.824,
+        "max_changed_frame": 80,
+        "compare_sheet": "cycles/sfa2-ken-azul-e-rosa/cycle-002/selecao-e-vs-preta/compare.png",
+        "divergence_plot": "cycles/sfa2-ken-azul-e-rosa/cycle-002/selecao-e-vs-preta/divergence.png",
+        "trace_plot": "cycles/sfa2-ken-azul-e-rosa/cycle-002/selecao-e-vs-preta/trace_compare.png",
+        "trace_stats": {
+          "ret1": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 208,
+              "last": 0
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 208,
+              "last": 0
+            },
+            "first_diff_frame": 74
+          },
+          "ret2": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 42,
+              "last": 0
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 42,
+              "last": 0
+            },
+            "first_diff_frame": 74
+          },
+          "ret3": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 90,
+              "last": 0
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 90,
+              "last": 0
+            },
+            "first_diff_frame": 74
+          },
+          "ret4": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 18,
+              "last": 4302
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 18,
+              "last": 4302
+            },
+            "first_diff_frame": 74
+          },
+          "retpele": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 12,
+              "last": 76
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 12,
+              "last": 76
+            },
+            "first_diff_frame": null
+          },
+          "spr1": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 31710,
+              "last": 0
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 31710,
+              "last": 0
+            },
+            "first_diff_frame": 73
+          },
+          "vs1": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 6484,
+              "last": 10504
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 6484,
+              "last": 31576
+            },
+            "first_diff_frame": 962
+          },
+          "vs2": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 4303,
+              "last": 6342
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 4303,
+              "last": 29330
+            },
+            "first_diff_frame": 962
+          },
+          "vs3": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 3114,
+              "last": 5285
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 3114,
+              "last": 24046
+            },
+            "first_diff_frame": 962
+          },
+          "vs4": {
+            "mod": {
+              "min": 0,
+              "max": 32767,
+              "first": 19,
+              "last": 4228
+            },
+            "baseline": {
+              "min": 0,
+              "max": 32767,
+              "first": 19,
+              "last": 18762
+            },
+            "first_diff_frame": 962
+          }
+        }
+      },
+      "checks": [
+        {
+          "id": "retrato-preta",
+          "expr": "all((baseline.ret1 != 0x7B58) | ((ret1 == 0x2908) & (ret2 == 0x18C6) & (ret3 == 0x14A5) & (ret4 == 0x1084)))",
+          "desc": "retrato da seleção (cor 2) com preto do Akuma",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "retrato-cor0-azul",
+          "expr": "all((baseline.ret1 != 0x113E) | ((ret1 == 0x7E06) & (ret2 == 0x7102) & (ret3 == 0x5881) & (ret4 == 0x3C20)))",
+          "desc": "o preview antes do botão (cor 0) fica azul",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "vs-preta",
+          "expr": "all((baseline.vs1 != 0x7B58) | ((vs1 == 0x2908) & (vs2 == 0x18C6) & (vs3 == 0x14A5) & (vs4 == 0x1084)))",
+          "desc": "retrato da tela VS (cor 2) com preto do Akuma",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "sprite-preta",
+          "expr": "all((baseline.spr1 != 0x7BDE) | (spr1 == 0x2908))",
+          "desc": "o sprite pequeno da seleção (cor 2) também",
+          "weight": 1,
+          "passed": false,
+          "value": false
+        },
+        {
+          "id": "outros-retratos-iguais",
+          "expr": "all((baseline.ret1 == 0x7B58) | (baseline.ret1 == 0x113E) | (ret1 == baseline.ret1))",
+          "desc": "Ryu, Adon, Chun-Li e Guy iguais ao original",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "retratos-na-tela",
+          "expr": "count(baseline.ret1 == 0x7B58) >= 20 and count(baseline.vs1 == 0x7B58) >= 20",
+          "desc": "sanidade: o Ken de cor 2 aparece na seleção e na VS",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "pele-retrato",
+          "expr": "all(retpele == baseline.retpele)",
+          "desc": "a pele do retrato não muda",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        }
+      ],
+      "score": 0.8571,
+      "hijack_mx_dynamic": {}
+    },
+    {
+      "id": "regressao-verde",
+      "state": "games/sfa2/states/luta-ken-2chutes-fight.mss",
+      "baseline_run": "runs/baselines/sfa2/regressao-verde-c42237b1540db95e",
+      "baseline_cached": false,
+      "mod_run": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-regressao-verde",
+      "mod_sheet": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-regressao-verde/sheet.png",
+      "mod_video": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-regressao-verde/video.mp4",
+      "compare": {
+        "baseline_run": "runs/baselines/sfa2/regressao-verde-c42237b1540db95e",
+        "mod_run": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-regressao-verde",
+        "frames_compared": 140,
+        "first_divergence_frame": null,
+        "frames_divergent": 0,
+        "mean_changed_pct": 0.0,
+        "max_changed_pct": 0.0,
+        "max_changed_frame": 40,
+        "compare_sheet": "cycles/sfa2-ken-azul-e-rosa/cycle-002/regressao-verde/compare.png",
+        "divergence_plot": "cycles/sfa2-ken-azul-e-rosa/cycle-002/regressao-verde/divergence.png",
+        "trace_plot": "cycles/sfa2-ken-azul-e-rosa/cycle-002/regressao-verde/trace_compare.png",
+        "trace_stats": {
+          "gi1": {
+            "mod": {
+              "min": 14792,
+              "max": 14792,
+              "first": 14792,
+              "last": 14792
+            },
+            "baseline": {
+              "min": 14792,
+              "max": 14792,
+              "first": 14792,
+              "last": 14792
+            },
+            "first_diff_frame": null
+          },
+          "gi2": {
+            "mod": {
+              "min": 10566,
+              "max": 10566,
+              "first": 10566,
+              "last": 10566
+            },
+            "baseline": {
+              "min": 10566,
+              "max": 10566,
+              "first": 10566,
+              "last": 10566
+            },
+            "first_diff_frame": null
+          },
+          "gi3": {
+            "mod": {
+              "min": 8452,
+              "max": 8452,
+              "first": 8452,
+              "last": 8452
+            },
+            "baseline": {
+              "min": 8452,
+              "max": 8452,
+              "first": 8452,
+              "last": 8452
+            },
+            "first_diff_frame": null
+          },
+          "gi4": {
+            "mod": {
+              "min": 7396,
+              "max": 7396,
+              "first": 7396,
+              "last": 7396
+            },
+            "baseline": {
+              "min": 7396,
+              "max": 7396,
+              "first": 7396,
+              "last": 7396
+            },
+            "first_diff_frame": null
+          },
+          "gi5": {
+            "mod": {
+              "min": 6338,
+              "max": 6338,
+              "first": 6338,
+              "last": 6338
+            },
+            "baseline": {
+              "min": 6338,
+              "max": 6338,
+              "first": 6338,
+              "last": 6338
+            },
+            "first_diff_frame": null
+          },
+          "pele": {
+            "mod": {
+              "min": 12956,
+              "max": 12956,
+              "first": 12956,
+              "last": 12956
+            },
+            "baseline": {
+              "min": 12956,
+              "max": 12956,
+              "first": 12956,
+              "last": 12956
+            },
+            "first_diff_frame": null
+          },
+          "rose": {
+            "mod": {
+              "min": 4104,
+              "max": 4104,
+              "first": 4104,
+              "last": 4104
+            },
+            "baseline": {
+              "min": 4104,
+              "max": 4104,
+              "first": 4104,
+              "last": 4104
+            },
+            "first_diff_frame": null
+          },
+          "hadouken": {
+            "mod": {
+              "min": 31710,
+              "max": 31710,
+              "first": 31710,
+              "last": 31710
+            },
+            "baseline": {
+              "min": 31710,
+              "max": 31710,
+              "first": 31710,
+              "last": 31710
+            },
+            "first_diff_frame": null
+          },
+          "x1": {
+            "mod": {
+              "min": 283,
+              "max": 465,
+              "first": 283,
+              "last": 465
+            },
+            "baseline": {
+              "min": 283,
+              "max": 465,
+              "first": 283,
+              "last": 465
+            },
+            "first_diff_frame": null
+          },
+          "hp1": {
+            "mod": {
+              "min": 119,
+              "max": 144,
+              "first": 144,
+              "last": 119
+            },
+            "baseline": {
+              "min": 119,
+              "max": 144,
+              "first": 144,
+              "last": 119
+            },
+            "first_diff_frame": null
+          },
+          "hp2": {
+            "mod": {
+              "min": 129,
+              "max": 144,
+              "first": 144,
+              "last": 129
+            },
+            "baseline": {
+              "min": 129,
+              "max": 144,
+              "first": 144,
+              "last": 129
+            },
+            "first_diff_frame": null
+          }
+        }
+      },
+      "checks": [
+        {
+          "id": "verde-na-tela",
+          "expr": "count(baseline.gi1 == 0x39C8) >= 0.8 * len(gi1)",
+          "desc": "sanidade: é mesmo o uniforme verde-escuro (cor 3)",
+          "weight": 1,
+          "passed": true,
+          "lhs": 560,
+          "rhs": 448.0
+        },
+        {
+          "id": "verde-igual",
+          "expr": "all(gi1 == baseline.gi1) and all(gi2 == baseline.gi2) and all(gi3 == baseline.gi3) and all(gi4 == baseline.gi4) and all(gi5 == baseline.gi5)",
+          "desc": "a paleta verde (cor 3) fica intacta",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "resto-igual",
+          "expr": "all(pele == baseline.pele) and all(rose == baseline.rose) and all(hadouken == baseline.hadouken)",
+          "desc": "nada mais muda",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        },
+        {
+          "id": "logica-igual",
+          "expr": "all(x1 == baseline.x1) and all(hp1 == baseline.hp1) and all(hp2 == baseline.hp2)",
+          "desc": "a luta transcorre igual",
+          "weight": 1,
+          "passed": true,
+          "value": true
+        }
+      ],
+      "score": 1.0,
+      "hijack_mx_dynamic": {}
+    }
+  ]
+}

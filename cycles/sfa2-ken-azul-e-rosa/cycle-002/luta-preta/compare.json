@@ -1,0 +1,210 @@
+{
+  "baseline_run": "runs/baselines/sfa2/luta-preta-009fa0041830d601",
+  "mod_run": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-002-luta-preta",
+  "frames_compared": 140,
+  "first_divergence_frame": 44,
+  "frames_divergent": 139,
+  "mean_changed_pct": 1.552,
+  "max_changed_pct": 1.908,
+  "max_changed_frame": 300,
+  "compare_sheet": "cycles/sfa2-ken-azul-e-rosa/cycle-002/luta-preta/compare.png",
+  "divergence_plot": "cycles/sfa2-ken-azul-e-rosa/cycle-002/luta-preta/divergence.png",
+  "trace_plot": "cycles/sfa2-ken-azul-e-rosa/cycle-002/luta-preta/trace_compare.png",
+  "trace_stats": {
+    "gi1": {
+      "mod": {
+        "min": 10504,
+        "max": 10504,
+        "first": 10504,
+        "last": 10504
+      },
+      "baseline": {
+        "min": 31710,
+        "max": 31710,
+        "first": 31710,
+        "last": 31710
+      },
+      "first_diff_frame": 0
+    },
+    "gi2": {
+      "mod": {
+        "min": 6342,
+        "max": 6342,
+        "first": 6342,
+        "last": 6342
+      },
+      "baseline": {
+        "min": 31576,
+        "max": 31576,
+        "first": 31576,
+        "last": 31576
+      },
+      "first_diff_frame": 0
+    },
+    "gi3": {
+      "mod": {
+        "min": 5285,
+        "max": 5285,
+        "first": 5285,
+        "last": 5285
+      },
+      "baseline": {
+        "min": 31444,
+        "max": 31444,
+        "first": 31444,
+        "last": 31444
+      },
+      "first_diff_frame": 0
+    },
+    "gi4": {
+      "mod": {
+        "min": 4228,
+        "max": 4228,
+        "first": 4228,
+        "last": 4228
+      },
+      "baseline": {
+        "min": 27216,
+        "max": 27216,
+        "first": 27216,
+        "last": 27216
+      },
+      "first_diff_frame": 0
+    },
+    "gi5": {
+      "mod": {
+        "min": 4228,
+        "max": 4228,
+        "first": 4228,
+        "last": 4228
+      },
+      "baseline": {
+        "min": 20876,
+        "max": 20876,
+        "first": 20876,
+        "last": 20876
+      },
+      "first_diff_frame": 0
+    },
+    "pele": {
+      "mod": {
+        "min": 12892,
+        "max": 12892,
+        "first": 12892,
+        "last": 12892
+      },
+      "baseline": {
+        "min": 12892,
+        "max": 12892,
+        "first": 12892,
+        "last": 12892
+      },
+      "first_diff_frame": null
+    },
+    "cabelo": {
+      "mod": {
+        "min": 13214,
+        "max": 13214,
+        "first": 13214,
+        "last": 13214
+      },
+      "baseline": {
+        "min": 13214,
+        "max": 13214,
+        "first": 13214,
+        "last": 13214
+      },
+      "first_diff_frame": null
+    },
+    "contorno": {
+      "mod": {
+        "min": 2114,
+        "max": 2114,
+        "first": 2114,
+        "last": 2114
+      },
+      "baseline": {
+        "min": 2114,
+        "max": 2114,
+        "first": 2114,
+        "last": 2114
+      },
+      "first_diff_frame": null
+    },
+    "hadouken": {
+      "mod": {
+        "min": 31710,
+        "max": 31710,
+        "first": 31710,
+        "last": 31710
+      },
+      "baseline": {
+        "min": 31710,
+        "max": 31710,
+        "first": 31710,
+        "last": 31710
+      },
+      "first_diff_frame": null
+    },
+    "rose": {
+      "mod": {
+        "min": 4104,
+        "max": 4104,
+        "first": 4104,
+        "last": 4104
+      },
+      "baseline": {
+        "min": 4104,
+        "max": 4104,
+        "first": 4104,
+        "last": 4104
+      },
+      "first_diff_frame": null
+    },
+    "x1": {
+      "mod": {
+        "min": 283,
+        "max": 465,
+        "first": 283,
+        "last": 465
+      },
+      "baseline": {
+        "min": 283,
+        "max": 465,
+        "first": 283,
+        "last": 465
+      },
+      "first_diff_frame": null
+    },
+    "hp1": {
+      "mod": {
+        "min": 119,
+        "max": 144,
+        "first": 144,
+        "last": 119
+      },
+      "baseline": {
+        "min": 119,
+        "max": 144,
+        "first": 144,
+        "last": 119
+      },
+      "first_diff_frame": null
+    },
+    "hp2": {
+      "mod": {
+        "min": 129,
+        "max": 144,
+        "first": 144,
+        "last": 129
+      },
+      "baseline": {
+        "min": 129,
+        "max": 144,
+        "first": 144,
+        "last": 129
+      },
+      "first_diff_frame": null
+    }
+  }
+}

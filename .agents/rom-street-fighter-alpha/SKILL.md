@@ -64,7 +64,8 @@ No `luta-ken-rose`, parado: ROUND 1 ~f90-150, FIGHT! ~f180-390, a Rose acerta um
 ## Fatos verificados (dinâmico primeiro)
 **Cor do uniforme (seleção).** 1 soco (Y/X/L) = cor 0, gi vermelho; 1 chute (B/A/R) = cor 1, gi roxo
 (prints 10, 13). **2+ socos juntos = cor 2 (gi branco) — CONFIRMADO em jogo** (state `luta-ken-2socos`,
-macro com `1 Y+X`; print do state). 2+ chutes = cor 3 (gi verde-escuro) — ainda **inferido**. Cores 4/5
+macro com `1 Y+X`; print do state). **2+ chutes juntos = cor 3 (gi verde-escuro) — CONFIRMADO em jogo**
+(state `luta-ken-2chutes`, macro com `1 B+A`). Cores 4/5
 (laranja / roxo-escuro) vêm de outro caminho (`C0:E0F8`, quando `$1C41,X ≠ 0`, tabela `$C0:DF2C`) —
 gatilho desconhecido. A rotina `C0:DF74` grava a cor do P1 em `$7E:07C8`
 (`ev-1883e2cdf5b2`) e, em espelho (mesmo personagem e mesma cor), troca pelo par (tabela `$C0:CEBC`:
@@ -133,6 +134,13 @@ Rose; tons do gi do Ken = cores 233-237 = bytes `$1D2,$1D4,$1D6,$1D8,$1DA`. Sele
   `$521E $419C $311A $2098`), luta + retratos + VS. Regressão na cor 2 (branco, 2 socos): 0 divergências.
   BPS `build/sfa2-ken-azul-e-rosa/` (163 B), 4 regiões de dados, 0 hijacks. Prints 25-29.
   ⚠ Os BPS não empilham (ambos nascem da ROM limpa): para ter as duas cores, use o `azul-e-rosa`.
+- **Pedido 3:** "na terceira roupa do Ken preta, igual do Akuma" → o mesmo mod **`sfa2-ken-azul-e-rosa`**
+  foi estendido e ficou PRONTO (ciclo 3, `objetivo-cumprido`, 42/42 checks): cor 2 (2+ socos) passou de
+  branca a **preta como a do Akuma** (cópia fiel dos tons do gi dele: `$2908 $18C6 $14A5 $1084 $1084`;
+  retrato `$2908 $18C6 $14A5 $1084` — com o realce, para o tecido não achatar). Regressão movida para a
+  cor 3 (verde-escuro, 2 chutes): 0 divergências. BPS 185 B, 6 regiões de dados. Prints 30-33.
+  ⚠ Lição do ciclo 2: o tom `$7BDE` (cor 2 do Ken) é igual ao gi do Ryu — checks de paleta guardam por
+  2+ tons (o check `sprite-preta` foi corrigido no ciclo 3, sem enfraquecer).
 - **Mod:** `mods/sfa2-ken-gi-azul/` (patch.asm só de dados; `mod.json` com `data[]`, 3 cenários, 16 checks).
   Build: `build/sfa2-ken-gi-azul/sfa2-ken-gi-azul.bps` (137 B), 2 regiões de dados (`$BE:8272` 10 B +
   `$BE:CE6A` 8 B), 0 hijacks, 0 avisos. Ciclo 2 = 16/16 checks ✅ + veredito visual `objetivo-cumprido`
@@ -149,17 +157,17 @@ Rose; tons do gi do Ken = cores 233-237 = bytes `$1D2,$1D4,$1D6,$1D8,$1DA`. Sele
 ## Como continuar
 1. **Entrega pendente do repositório:** commitar as mudanças de ferramenta + mod + docs (`feat/…` → PR →
    squash, governança `opensource-project`) — **só a pedido do usuário**.
-2. **Outra cor para o gi, se pedido:** trocar só as 5 constantes `!gi_*` do `patch.asm` (+ as 4 do
-   retrato) e rodar `fab cycle run` de novo. As cores 2-5 do uniforme estão em `0x1F0272+0x20*n`
-   (nunca testadas em jogo).
+2. **Outra cor para o gi, se pedido:** trocar só as 5 constantes da cor no `patch.asm` (+ as 4 do
+   retrato) e rodar `fab cycle run` de novo. Feito até agora: cor 0 azul, cor 1 rosa do Dan, cor 2 preta
+   do Akuma; cor 3 = verde-escuro (intocada, states `luta-ken-2chutes(-fight)`).
 3. **Olhos do retrato:** opção A (`$3C20`) aplicada e legível (print 23); opção B (`$2C21`) documentada no
    print 15 — trocar é patch de dados, não precisa de novo ciclo para montar.
 4. **Fora de escopo, só se pedido:** tela de vitória/final do Ken (paleta não verificada), cores 4/5,
    mudar o *desenho* da roupa (exigiria descomprimir/recomprimir S-DD1).
 
 ## Perguntas em aberto
-- O que liga `$1C41,X` (cores 4/5)? A seleção com 2+ chutes dá mesmo a cor 3? (2+ socos = cor 2 está
-  **confirmado**)
+- O que liga `$1C41,X` (cores 4/5)? ~~2+ socos/chutes = cores 2/3?~~ **ambos confirmados** (cor 2
+  branca com `1 Y+X`, cor 3 verde-escuro com `1 B+A`).
 - Tela de vitória / final do Ken: usam a paleta de retrato `0x1F4E60`? (não verificado)
 - X/vida do P2 (`$0989`/`$09BE`) — inferidos pela estrutura, conferir no primeiro baseline.
 - O que dispara a recarga de paleta da rotina `C0:3A8F` a cada ~70 frames em plena luta? (caracterizado
@@ -189,3 +197,10 @@ Rose; tons do gi do Ken = cores 233-237 = bytes `$1D2,$1D4,$1D6,$1D8,$1DA`. Sele
   "2+ socos = cor 2 (branco)" **confirmada** (state `luta-ken-2socos`); retrato do Dan usa índices
   próprios (3 rampas simuladas, print 28). Prints 25-29. O trabalho da tarde foi commitado em 3 commits
   e submetido no PR #9 (ferramentas + mod azul + docs).
+- **2026-10-25 (madrugada)** — Terceira roupa: cor 2 do Ken de branca a **preta do Akuma** (cópia fiel
+  do gi dele, id 2, `$2908 $18C6 $14A5 $1084 $1084`; retrato com o realce — simulação print 33) no mod
+  `sfa2-ken-azul-e-rosa` (ciclo 3, **42/42 checks, `objetivo-cumprido`**). Hipótese "2+ chutes = cor 3"
+  **confirmada** (gi verde-escuro; states `luta-ken-2chutes(-fight)`); regressão movida para a cor 3 com
+  0 divergências. Lição: `$7BDE` é comum ao gi do Ryu e à cor 2 do Ken → checks de paleta guardam por
+  2+ tons (check `sprite-preta` corrigido no ciclo 3). Prints 30-33. Memória CoALA consolidada (notas
+  #225 paletas, #226 recarga, #227 receita de recolor + lição das guardas).
