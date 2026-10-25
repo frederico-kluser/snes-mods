@@ -46,6 +46,17 @@
 | — | rosto, olhos, cabelo e bandana do lutador NÃO usam os tons 9-13 do gi (diff pixel a pixel do mod de cor: 0 px mudam na cabeça) | `runs/cycles/sfa2-ken-gi-azul/cycle-002-luta-soco` × baseline, frame 120 |
 | — | ⚠ tons de gi **coincidem entre personagens**: `$7BDE` = gi do Ryu (cor 0) E da cor 2 do Ken → checks de paleta por um só tom falsificam; guardar por 2+ tons (lição do ciclo 2 do mod azul-e-rosa) | trace `selecao-e-vs-preta` f0-9 (cursor no Ryu) |
 
+## Sprites dos lutadores (2026-10-25, sessão das luvas)
+| facto | evidência |
+|---|---|
+| **Paleta de sprite = índice do OAM + 8 paletas** (Ken OAM 6 → CGRAM 14; Rose OAM 7 → CGRAM 15) | pokes seletivos: `7E:06D2`→gi magenta (só Ken), `7E:05D2`→só cenário, `7E:05E2`→só Rose; dump das 256 cores da CGRAM; OAM × frame |
+| CGRAM pal 11 (`$160-$17F`, cores 176-191) fica **toda a zeros** na luta → livre para paleta espelho (sprite pal 3) | dump completo da CGRAM no frame da luta |
+| Cada **pose** tem a sua lista de cels `[count][x,y,tile,flags]`; a pose parada alterna entre PC `0x3C49A9` e `0x3C49F2` | sonda exec em `C0:5C8E` (dbr=`$FC`, y=`$49A9`) + leitura da ROM; OAM do frame 24 tem os tiles de `0x3C49F2` |
+| Atributo do sprite = `(flags & $C2) ^ $0B`; `$0B` = `$6D` (Ken) e `$2F` (Rose); bits 2-5 das flags são **livres** | desmontagem `C0:5CA4-5CAB` + OAM dump (attrs `$6D`/`$2F`) |
+| Tons 14/15 do sprite = **cabelo E luvas** (ouro); os punhos usam os tiles `$0C`/`$0E` na pose parada | poke dos tons 14/15 → magenta nos dois punhos + na cabeça; OAM por frame |
+| ⚠ **hooks de código deslocam o RNG da CPU** (a luta joga diferente do frame 1: `x1` 203 vs 201) | `fab run` limpa × mod com os 3 hooks, traces de `7E:0709`/`7E:073E` |
+
+
 ## Grade de seleção (varredura 2026-10-25; `$7E:07A2` = id do personagem sob o cursor)
 - Linhas 1-3 (15 posições): Ryu(0), Adon(5), Chun-Li(4), Guy(7), Ken(1) · Dhalsim(15), Gen(17),
   Sakura(13), Rolento(14), Charlie(3)?? · Charlie(3), Birdie(8), Rose(9), ?, Sagat(11)

@@ -160,6 +160,50 @@ class Watch:
 
 
 @dataclass
+class Poke:
+    """Escrita de um valor num frame: "60:cgram:01D2:2=0x03E0" ou {"frame","addr","value","size"}."""
+    frame: int
+    addr: int
+    value: int
+    size: int = 1
+    space: str = ""      # "" = espaço da CPU; cgram | vram | oam = offset na memória do PPU
+
+    @classmethod
+    def from_spec(cls, spec: dict | str) -> "Poke":
+        if isinstance(spec, str):
+            left, sep, value_txt = spec.partition("=")
+            frame_txt, sep2, rest = left.partition(":")
+            if not (sep and sep2):
+                raise FabError(f"poke inválido: {spec!r}", "formato FRAME:ENDEREÇO=VALOR, ex.: 60:cgram:01D2:2=0x03E0")
+            try:
+                value = int(value_txt.strip(), 0)
+                frame = int(frame_txt)
+            except ValueError:
+                raise FabError(f"poke inválido: {spec!r}", "FRAME e VALOR têm de ser números (0x… aceita hexadecimal)")
+            w = Watch.from_spec("poke=" + rest.strip())      # mesmo parser dos watches (espaço, tamanho, limites)
+            if w.signed:
+                raise FabError(f"poke inválido: {spec!r}", "valor com sinal não faz sentido num poke")
+            return cls(frame, w.addr, value, w.size, w.space)
+        space, addr_txt = _split_space(spec["addr"])
+        size = spec.get("size")
+        if space:                                    # "cgram:0160", "cgram:0160:2" ou size explícito
+            text = str(spec["addr"]).strip()
+            if size is not None and len(text.split(":")) == 2:
+                text = f"{text}:{int(size)}"
+            w = Watch.from_spec("poke=" + text)
+            return cls(int(spec["frame"]), w.addr, int(spec["value"]), w.size, space)
+        return cls(int(spec["frame"]), parse_addr(addr_txt), int(spec["value"]), int(size or 1))
+
+    def lua(self) -> dict:
+        if self.space:
+            return {"frame": self.frame, "mem": PPU_SPACES[self.space][0], "offset": self.addr,
+                    "value": self.value, "size": self.size}
+        off = wram_offset(self.addr)
+        mem, offset = ("snesWorkRam", off) if off is not None else ("snesDebug", self.addr)
+        return {"frame": self.frame, "mem": mem, "offset": offset, "value": self.value, "size": self.size}
+
+
+@dataclass
 class Probe:
     kind: str            # write | read | exec
     addr: int
@@ -199,7 +243,7 @@ class Job:
     capture_start: int = 0
     warmup: int = 0                                  # frames iniciais sem medir (state traz RAM velha)
     wram_every: int = 0
-    pokes: list[dict] = field(default_factory=list)  # {"frame", "addr", "value", "size"}
+    pokes: list["Poke"] = field(default_factory=list)  # escritas pontuais (Poke)
     save_end: Path | None = None
     save_at: list[dict] = field(default_factory=list)  # {"frame", "path"}
     cdl_out: Path | None = None                         # dump do Code/Data Log da ROM no fim
@@ -208,13 +252,7 @@ class Job:
         probes = []
         for p in self.probes:
             probes.extend(p.lua(rom))
-        pokes = []
-        for pk in self.pokes:
-            addr = parse_addr(pk["addr"])
-            off = wram_offset(addr)
-            mem, offset = ("snesWorkRam", off) if off is not None else ("snesDebug", addr)
-            pokes.append({"frame": int(pk["frame"]), "mem": mem, "offset": offset,
-                          "value": int(pk["value"]), "size": int(pk.get("size", 1))})
+        pokes = [pk.lua() for pk in self.pokes]
         return {
             "harness_version": HARNESS_VERSION,
             "out_dir": out_dir.as_posix(),
@@ -388,5 +426,5 @@ def job_from_scenario(sc: dict, base_dir: Path, game_dir: Path | None = None) ->
         capture_start=int(cap.get("start", 0)),
         warmup=int(sc.get("warmup", 0)),
         wram_every=int(sc.get("wram_every", 0)),
-        pokes=sc.get("pokes", []),
+        pokes=[Poke.from_spec(p) for p in sc.get("pokes", [])],
     )

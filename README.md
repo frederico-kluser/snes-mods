@@ -53,6 +53,16 @@ ROMs; à direita, o patch de pulo duplo do guia (B no chão e B de novo no ar).<
                         build/<id>/<id>.bps + relatório
 ```
 
+## Regra de descoberta própria (não negociável)
+
+**Não se usam projetos de terceiros que já tragam a solução pronta** — descompressores, tabelas de
+streams, ferramentas de ROM-hacking, patches de outros. É roubar. Tudo o que entra num patch ou numa
+conclusão sai da **nossa** evidência: sondas do emulador (`fab probe`/`ram`), desmontagem e leitura
+direta da ROM (`fab disasm`, `fab re`), extração de píxeis pela própria tela (skill `pixel-peep`) e o
+que a RAM/VRAM mostra em execução. Ferramentas externas podem ser **citadas** como referência, mas
+nunca como fonte dos valores que vão para os patches. O que não se provar com `evidence_id` próprio
+não existe.
+
 ## Instalação
 
 Requisitos: Windows 10/11 x64, Python 3.12+, Git e (opcional) Node.js ≥ 22.19 para o MCP do REA.

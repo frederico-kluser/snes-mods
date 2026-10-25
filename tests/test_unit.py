@@ -12,7 +12,7 @@ from snesfab import bps
 from snesfab.build import data_coverage, parse_data_regions
 from snesfab.checks import Evaluator, evaluate_checks, score
 from snesfab.disasm65816 import OPCODES, decode, disassemble, find_writer_before, instr_size
-from snesfab.emu import Watch, job_from_scenario, to_lua
+from snesfab.emu import Poke, Watch, job_from_scenario, to_lua
 from snesfab.ghidra import ghidra_addr
 from snesfab.macro import mask_of, parse_macro, total_frames
 from snesfab.paths import BUILD
@@ -338,6 +338,22 @@ class SerializationTests(unittest.TestCase):
         for bad in ("c=cgram:01FF:2", "c=cgram:0200", "o=oam:0220", "c=cgram:01:02:2"):
             with self.assertRaises(FabError, msg=bad):
                 Watch.from_spec(bad)
+
+    def test_poke_specs(self):
+        p = Poke.from_spec("60:cgram:01D2:2=0x03E0")
+        self.assertEqual((p.frame, p.space, p.addr, p.size, p.value), (60, "cgram", 0x1D2, 2, 0x03E0))
+        self.assertEqual(p.lua(), {"frame": 60, "mem": "snesCgRam", "offset": 0x1D2, "value": 0x03E0, "size": 2})
+        p = Poke.from_spec("30:7E:06D2:2=0x1084")                  # WRAM: o offset é o da work RAM
+        self.assertEqual((p.frame, p.space, p.lua()["mem"], p.lua()["offset"]),
+                         (30, "", "snesWorkRam", 0x6D2))
+        p = Poke.from_spec("0:oam:0x21A=0x2F")                     # OAM, 1 byte, decimal
+        self.assertEqual((p.addr, p.size, p.value, p.lua()["mem"]), (0x21A, 1, 0x2F, "snesSpriteRam"))
+        # mod.json: os mesmos campos, com ou sem prefixo de espaço
+        self.assertEqual(Poke.from_spec({"frame": 5, "addr": "7E:06D2", "value": 1}).lua()["offset"], 0x6D2)
+        self.assertEqual(Poke.from_spec({"frame": 5, "addr": "cgram:0160:2", "value": 0, "size": 2}).space, "cgram")
+        for bad in ("60:cgram:01D2:2", "cgram:01D2=1", "60:cgram:01FF:2=1", "x:cgram:01D2=1"):
+            with self.assertRaises(FabError, msg=bad):
+                Poke.from_spec(bad)
 
 
 if __name__ == "__main__":

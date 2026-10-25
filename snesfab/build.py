@@ -215,8 +215,20 @@ def build_mod(mod_dir: Path, quiet: bool = False) -> dict:
     data_regions = parse_data_regions(mod.get("data", []), img.mapping)
     regions = []
     hijacks = []
-    flags_hint = {fmt_addr(parse_addr(h["addr"])): (h.get("m", 8) == 8, h.get("x", 8) == 8)
-                  for h in mod.get("hijacks", [])}
+    flags_hint = {}
+    for h in mod.get("hijacks", []):
+        addr = parse_addr(h["addr"])
+        flags = (h.get("m", 8) == 8, h.get("x", 8) == 8)
+        flags_hint[fmt_addr(addr)] = flags
+        # S-DD1: o código roda nas janelas HiROM $C0-$FF, mas o binário é LoROM. Aceita o
+        # endereço de execução (ex.: C0:0312) além do canônico (80:8312) para a mesma PC.
+        if img.mapping == "sdd1":
+            try:
+                pc = snes_to_pc(addr, img.mapping)
+            except FabError:
+                pc = None
+            if pc is not None and pc < 0x100000:
+                flags_hint.setdefault(fmt_addr(((0xC0 | (pc >> 16)) << 16) | (pc & 0xFFFF)), flags)
     for a, b in _diff_regions(base_for_diff, new):
         snes_a = pc_to_snes(a, img.mapping)
         orig_bytes = base_for_diff[a:b]
@@ -235,9 +247,13 @@ def build_mod(mod_dir: Path, quiet: bool = False) -> dict:
             size = (new[a + 4] | (new[a + 5] << 8)) + 1
             reg["rats"] = {"size": size, "code_start": fmt_addr(pc_to_snes(a + 8, img.mapping))}
         if kind == "overwrite":
-            m8, x8 = flags_hint.get(fmt_addr(snes_a), (True, True))
+            keys = [fmt_addr(snes_a)]
+            if img.mapping == "sdd1" and a < 0x100000:      # janela de execução $C0-$CF
+                keys.append(fmt_addr(((0xC0 | (a >> 16)) << 16) | (a & 0xFFFF)))
+            hint = next((flags_hint[k] for k in keys if k in flags_hint), None)
+            m8, x8 = hint or (True, True)
             h = _hijack_report(base_for_diff, new, a, b, img.mapping, m8, x8, len(new))
-            h["flags_source"] = "mod.json hijacks[]" if fmt_addr(snes_a) in flags_hint else "padrão m8,x8 (sem evidência!)"
+            h["flags_source"] = "mod.json hijacks[] (m/x verificados)" if hint else "padrão m8,x8 (sem evidência!)"
             hit = next((r for r in data_regions if r["start_pc"] < b and a < r["end_pc"]), None)
             if hit:
                 h["ok"] = False

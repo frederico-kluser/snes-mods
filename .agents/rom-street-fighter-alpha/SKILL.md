@@ -154,7 +154,50 @@ Rose; tons do gi do Ken = cores 233-237 = bytes `$1D2,$1D4,$1D6,$1D8,$1DA`. Sele
   `fab run --warmup`, `mod.json → scenarios[].warmup`; testes `JobTests` e
   `tests/test_e2e.py::test_warmup_starts_measurement_late`).
 
+## LUVAS PRETAS na roupa preta (cor 2) — mecanismo aprovado, EM CURSO (2026-10-25, sessão 2)
+
+**Pedido do dono:** "na roupa preta quero SÓ as luvas do Ken pretas; o cabelo loiro fica" +
+"analise na mudança de cores para mantermos o sombreado, não ficar mono cor" (→ skill `pixel-peep`).
+
+**Fatos novos (todos medidos):**
+- **A paleta de sprite é `p+8`**: o OAM diz paleta 6/7 (Ken/Rose) mas o render lê CGRAM 14/15.
+  Medido: Ken (OAM 6) lê CGRAM `$1C0-$1DF` (pal 14 = bloco `0x1F0260+2*32` da ROM); Rose (OAM 7) lê
+  `$1E0` (pal 15). Logo **sprite pal 3 → CGRAM 11 (`$160-$17F`)**, que o jogo deixa **toda a zeros**
+  na luta → é a nossa **paleta espelho**. Evidência: pokes seletivos (`7E:06D2` → gi magenta,
+  `7E:05D2` → só cenário) + dump das 256 cores da CGRAM + OAM dump × frame.
+- **Cada pose tem a sua lista de cels** `[count][x,y,tile,flags]`; o Ken parado alterna entre
+  PC `0x3C49A9` e `0x3C49F2`. Ponteiro em `$18,X`, banco em `$F5,X` (sonda em `C0:5C8E`: dbr=`$FC`
+  p/ Ken, `$FF` p/ Rose). Motor `C0:5C60-5CE2`: attr = `(flags & $C2) ^ $0B`, bits 2-5 das flags livres.
+- **O ouro (tons 14/15) é do cabelo E das luvas** — não há tom que separe; a separação é por TILE.
+  Nas duas poses paradas os punhos são os tiles **`$0C`/`$0E`**; em poses de punho erguido o punho cai
+  num tile do grupo da cabeça (`$2E`…) → **cobertura por tile é parcial** (lacuna conhecida).
+- **Sombreado**: rampa de 2 tons para a luva (realce `$2908` + sombra `$1084`, os do gi preto), nunca
+  preto único; contorno `$0842` fica de fora. Simulação em `games/sfa2/prints/34-luvas-rampas-sombreado.png`.
+
+**Implementado em `mods/sfa2-ken-azul-e-rosa/patch.asm`** (3 hijacks, todos m8/x16 verificados no build;
+121 B de freecode em `A7:FF31`; 0 avisos):
+1. `C0:0312` (antes do DMA da CGRAM): copia `$06C0-$06DF` → `$0660-$067F` todo VBlank; **só se
+   `7E:07C8 == 2`** sobrescreve os tons 14/15 com `$2908`/`$1084`. Outras cores = cópia fiel → luvas loiras.
+2. `C0:5CA9`: se a paleta base é 6 (P1) **e** o tile final (`$0015C2,X`) é `$0C`/`$0E` → `attr ^= $0A`
+   (paleta 6→3 = espelho). P2 (pal 7) fica intacto.
+3. `C0:3A9A` (fim da recarga de paleta `C0:3A60-3A9D`): refaz o espelho para não ficar 1 frame atrasado.
+
+**Validação válida (mesmo timing) — mod × mod com a regra desligada**, 530 frames:
+18 609 px alterados, **destino sempre na rampa preta (0 erros)**, origem ouro em 95,6% (o resto são
+frames do "flash" de dano, que escreve `$06C0` fora da rotina hookada). Prints 34-37.
+
+**⚠ ARMADILHA GRANDE (custou o ciclo 4 vermelho):** os hooks **mudam o timing** e o RNG da CPU muda
+com ele → a luta joga diferente já no frame 1 (`x1` 203 vs 201). Consequência: **checks alinhados ao
+baseline da ROM limpa não valem para mod com código** (giram ❌ mesmo com o mod certo). Verificação
+válida = mod × mod-com-regra-desligada, ou checks que não dependem do alinhamento de frame.
+
 ## Como continuar
+0. **Luvas pretas (em curso):** o mecanismo está implementado e medido; falta **cobrir as poses em que
+   o punho é desenhado por um tile do grupo da cabeça** (ex.: `$2E` no punho erguido). Caminho: rodar o
+   macro, colher OAM+buffer do espelho por frame, e para cada tile que tenha ouro *abaixo da linha da
+   cabeça* acrescentar o tile na regra do hook `C0:5CA9` (hoje `$0C`/`$0E`), validando sempre por
+   "mod × mod-com-regra-desligada" (o baseline limpo não serve — ver armadilha do timing). Depois
+   disso, rever os checks do `mod.json` para não compararem luta-alinhada ao baseline limpo.
 1. **Entrega pendente do repositório:** commitar as mudanças de ferramenta + mod + docs (`feat/…` → PR →
    squash, governança `opensource-project`) — **só a pedido do usuário**.
 2. **Outra cor para o gi, se pedido:** trocar só as 5 constantes da cor no `patch.asm` (+ as 4 do
@@ -204,3 +247,14 @@ Rose; tons do gi do Ken = cores 233-237 = bytes `$1D2,$1D4,$1D6,$1D8,$1DA`. Sele
   0 divergências. Lição: `$7BDE` é comum ao gi do Ryu e à cor 2 do Ken → checks de paleta guardam por
   2+ tons (check `sprite-preta` corrigido no ciclo 3). Prints 30-33. Memória CoALA consolidada (notas
   #225 paletas, #226 recarga, #227 receita de recolor + lição das guardas).
+- **2026-10-25 (sessão 2, luvas)** — Investigação das luvas pretas: descoberto que a **paleta de sprite
+  é `p+8`** (OAM 6/7 → CGRAM 14/15; sprite pal 3 → CGRAM 11, livre), que **cada pose tem a sua lista de
+  cels** (`0x3C49A9`/`0x3C49F2` na pose parada) e que o ouro é do cabelo **e** das luvas (separação só
+  por tile). Implementados **3 hooks** (espelho `C0:0312`, atributo `C0:5CA9`, recarga `C0:3A9A`) no
+  `sfa2-ken-azul-e-rosa`, com rampa preta de 2 tons (`$2908`/`$1084`) a pedido do dono (sombreado).
+  Validação por "mod × mod com a regra desligada": só o ouro muda (0 destinos fora da rampa).
+  Ferramentas: `fab run --poke` (`Poke` em `snesfab/emu.py`, testes) e `build` aceitando o endereço de
+  execução S-DD1 (`C0:xxxx`) além do canônico LoROM. **Descoberta crítica:** os hooks deslocam o RNG
+  da CPU → a luta joga diferente do frame 1; o ciclo 4 deu 21/46 por isso (checks alinhados ao baseline
+  limpo não servem). Prints 34-37. Falta: cobrir as poses em que o punho cai em tile da cabeça.
+
