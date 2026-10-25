@@ -97,3 +97,99 @@ ação ou ~70 frames). Medições de paleta usam `warmup` nos cenários (mod `sf
 - X/vida do P2 inferidos — conferir.
 - O que dispara a recarga de paleta da rotina `C0:3A8F` a cada ~70 frames (parado)? Só caracterizado
   por observação (`ev-7d902d01f792`/`ev-d6cb5f0e50b5`), sem leitura estática da chamada.
+
+## Dificuldades encontradas no mod das LUVAS (diário técnico, 2026-10-25)
+
+Cada item: **sintoma → causa → correção → impacto na qualidade**.
+
+1. **A paleta de sprite é `p+8` e ninguém dizia isso.** Sintoma: os lutadores liam cores 224-255
+   (`$1C0`) mas o `$2105` dizia **Mode 1**, onde 4bpp só endereça 0-127 → contradição aparente;
+   pokes em pal 6/7 mudavam o cenário, não o Ken. Causa: o jogo/emulador mapeia a paleta `p` do OAM
+   em CGRAM `p+8`. Correção: medido por pokes seletivos + dump das 256 cores + OAM. **Impacto:** todo
+   o desenho do "espelho" depende disso (sprite pal 3 → CGRAM 11, que o jogo deixa a zeros); sem essa
+   medição o plano da tarefa (pal 11) parecia impossível. **Custou ~1/3 da sessão.**
+
+2. **Asar monta imediatos em 16 bits sem avisar.** `lda #$08` virou `A9 08 00`: o `00` executa como
+   **BRK** em runtime. Sintoma: espelho copiado só nos bytes pares e a rampa preta nunca aplicada —
+   parecia "hook não roda". Correção: sufixos `.b` em todo imediato + laço byte a byte. **Impacto:**
+   uma rodada inteira de depuração; e a lição de que **o build não valida tamanho de imediato**.
+
+3. **Duas listas de cels para a MESMA pose.** Marquei 18 cels em `0x3C49A9` (lista dos frames 0-5) e
+   testei no frame 24, que usa `0x3C49F2` → **0 píxeis mudaram** e eu suspeitei do hook. Correção:
+   identificar a lista pelo **conjunto de tiles do OAM**, não por suposição. **Impacto:** ~18 runs
+   despercebidas; hoje há sonda do ponteiro por frame.
+
+4. **`org` no Asar é LoROM, mas o jogo roda em `$C0` (janela HiROM do S-DD1).** Escrevi
+   `org $00DA9A` pensando em `C0:3A9A` → caiu em **PC 0x5A9A, dentro do motor de sprites**. O build
+   reportou como "overwrite" (não sabe se é código alheio). Correção: `bank = 0x80 | (pc>>15)`.
+   **Impacto:** um build potencialmente corruptor; mitigado por eu conferir a região no relatório.
+
+5. **A evidência M/X do hijack era ignorada no S-DD1.** O build casava só o endereço canônico
+   (`80:8312`) e a evidência estava em `C0:0312` → `flags_source: padrão m8,x8 (sem evidência!)`, ou
+   seja **o portão de segurança validava com M/X errados**. Correção: alias de janela S-DD1 no
+   `build.py`. **Impacto:** o portão voltou a valer; nos 3 hooks ficou `m8,x16` verificado.
+
+6. **O freecode não é infinito.** Com a tabela de 64 tiles + o gate, o Asar deu
+   `Eno_freespace: No freespace found (Requested size: 221)`. Correção: tirei a tabela (redundante com
+   as marcas) e o código caiu para ~150 B. **Impacto:** perdi a "rede genérica" que cobria poses não
+   analisadas; ficou documentada como evidência para quem quiser estender.
+
+7. **O mesmo tile é luva numa pose e cabelo noutra.** A primeira regra (tabela de 14 tiles) era
+   heurística; ao estendê-la, punha cabelo a preto em poses não analisadas. Correção: decisão **por
+   cel** (bit 2 das flags), 284 cels em 28 poses. **Impacto:** é a diferença entre "quase" e "certo";
+   sem isso a cobertura era parcial e o risco de artefacto no cabelo era real.
+
+8. **Filtro de conflito errado (bug de qualidade que eu apanhei).** Eu testava o conflito com a
+   **caixa** do blob de cabelo → cels cujo box só roçava a caixa eram excluídos → **punhos inteiros
+   continuavam loiros** (f63-65: blob de 47 px = um punho). Correção: teste pelos **píxeis reais** do
+   cabelo → 217 → **284 marcas** e 113 → **119/140** frames limpos. **Impacto:** direto na cobertura;
+   foi o último salto de qualidade.
+
+9. **Qualquer hook de código desloca o RNG.** Os lutadores jogam diferente a partir do **frame 1**
+   (`7E:0709` = 203 limpo × 201 no mod) porque o timing da CPU muda e o jogo sorteia com ele.
+   Consequência: o **ciclo oficial (baseline da ROM limpa, checks alinhados ao frame) nunca passa** —
+   ciclo 4 deu **21/46 ❌**, não por defeito do patch. Correção: validação substituta — (a) mesma ROM
+   com marcas a zero e comparação só na janela em sincronia (f0-30: **0 px**), (b) métrica sem
+   alinhamento (blobs de ouro por frame: **119/140**), (c) inspeção visual (prints 34-39). **Impacto:**
+   o mod **não tem veredito oficial verde**; a evidência de aceitação é mais fraca que a dos mods só
+   de dados (42/42) e isso está declarado no README.
+
+10. **O "flash" de dano escreve `$06C0` por fora da rotina hookada.** Durante o flash da paleta o
+    espelho fica 1 frame atrasado (medido: 824 px com origem não-ouro numa validação anterior).
+    Correção: gate — a rampa preta só liga quando o tom 9 da paleta **já** é o preto do Akuma
+    (`$06D2 == $2908`), o que também resolveu luva preta em gi branco no 1.º segundo. **Impacto:**
+    troca "cobertura máxima" por "coerência"; hoje nos flashes a luva acompanha o resto da roupa.
+
+11. **Sondas exec no freecode mentem.** `fab probe exec A7:FF39` deu **0 hits** com o código a correr
+    comprovadamente (o espelho era escrito). Correção: verificar por **efeito** (valores na WRAM/CGRAM)
+    em vez de execução. **Impacto:** menos confiança na sonda como prova; mais peso nas medições de
+    estado.
+
+12. **Ferramentas que faltavam (e que a tarefa exigia).** Sem poke não dava para testar hipóteses
+    (CGRAM/OAM/registos): implementei `Poke` + `fab run --poke`; depois precisei de **todos** os frames
+    (`*`) e de intervalos (`A-B`) e de mais hits por sonda (`--probe-max`). **Impacto:** cada
+    ferramenta nova destravou uma hipótese; sem elas a identificação das luvas era inviável.
+
+13. **`build.py` classificava dado declarado como freespace.** As flags marcadas que valiam `$00` no
+    original apareciam como espaço livre do Asar (156 "freespace" falsos). Correção: `data[]` ganha de
+    `freespace`. **Impacto:** relatório honesto; um freespace falso esconde corrupção.
+
+14. **Testes ponta-a-ponta "falhavam" pelo interpretador errado.** `python -m unittest tests.test_e2e`
+    com o Python do sistema dá `ModuleNotFoundError: matplotlib`; o projeto usa `.venv`. **Impacto:**
+    quase reportei regressão que não existia; a regra passou a ser correr com `.venv`.
+
+15. **CI vermelho por governança.** O título do PR tinha **93 caracteres** (limite 72) e havia um
+    `F401` (import `Poke` não usado depois de mover a expansão para `_expand_pokes`). Correção: título
+    com 60 caracteres + import removido; CI ficou **todo verde** (build/Tests/Fuzz/CodeQL).
+    **Impacto:** o merge estava bloqueado por detalhe de forma, não de conteúdo.
+
+16. **Métrica de "ouro" tem falsos positivos.** O fogo do super da Rose tem píxeis **iguais** aos tons
+    de ouro do Ken (`$339E`/`$029C`) → frames como f330 contam 3 blobs sem haver luva loira.
+    **Impacto:** a cobertura medida é um **limite inferior** nesses momentos; documentado.
+
+**Balanço de qualidade:** mecanismo provado e coerente (0 píxeis errados na janela em sincronia;
+sombreado preservado com 2 tons; 284 cels marcados em 28 poses), cobertura **medida** de 119/140
+frames nas poses exercitadas, poses não exercitadas intocadas e **sem veredito oficial** por causa do
+RNG. O que falta para "perfeito": as ~20/140 frames em que o cel do punho **contém píxeis do cabelo** —
+aí só um remapeamento de píxeis no tile em VRAM (ou um critério por posição do cel) resolve sem pintar
+o cabelo.

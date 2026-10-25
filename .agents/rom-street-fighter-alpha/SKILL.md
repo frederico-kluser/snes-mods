@@ -206,6 +206,24 @@ com ele → a luta joga diferente já no frame 1 (`x1` 203 vs 201). Consequênci
 baseline da ROM limpa não valem para mod com código** (giram ❌ mesmo com o mod certo). Verificação
 válida = mod × mod-com-regra-desligada, ou checks que não dependem do alinhamento de frame.
 
+## Dificuldades (resumo — detalhe em `games/sfa2/notes.md`)
+
+16 armadilhas registadas com sintoma → causa → correção → impacto. As que mais custaram:
+**(1)** a paleta de sprite é `p+8` (CGRAM 14/15) e o `$2105` diz Mode 1 — uma tarde de investigação, mas
+sem isso o "espelho" não existia; **(2)** Asar monta imediatos em 16 bits → `00` executa como BRK
+(espelho pela metade); **(3)** duas listas de cels para a mesma pose → 18 runs sem efeito;
+**(4)** `org` é LoROM e o jogo corre em `$C0` → escrevi dentro do motor de sprites uma vez;
+**(5)** a evidência M/X do hijack era ignorada no S-DD1 (portão a validar com flags erradas);
+**(6)** freecode acabou (221 B) → tabela de tiles fora; **(7)** o mesmo tile é luva numa pose e cabelo
+noutra → decisão passou a ser por **cel**; **(8)** filtro de conflito pela caixa do blob excluía punhos
+inteiros → passou a ser por **píxel** (217→284 marcas, 113→119/140 frames); **(9)** **qualquer hook
+desloca o RNG** → o ciclo oficial nunca passa (21/46) e a verificação mudou para "mesma ROM com marcas
+a zero" + métrica de blobs; **(10)** flash escreve `$06C0` fora do hook → gate `$06D2 == $2908`;
+**(11)** sonda exec no freecode dá 0 hits → verificar por efeito; **(12)** faltavam `--poke`/`--probe-max`
+na CLI; **(13)** `build` chamava freespace a dado declarado; **(14)** e2e "falhava" por interpretador
+(Python do sistema sem matplotlib; usar `.venv`); **(15)** CI vermelho por título de PR > 72 chars e
+`F401`; **(16)** o fogo da Rose tem cores iguais ao ouro → cobertura medida é limite inferior.
+
 ## Como continuar
 0. **Luvas pretas (em curso):** o mecanismo está implementado e medido; falta **cobrir as poses em que
    o punho é desenhado por um tile do grupo da cabeça** (ex.: `$2E` no punho erguido). Caminho: rodar o
