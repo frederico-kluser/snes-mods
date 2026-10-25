@@ -185,7 +185,7 @@ def _expand_pokes(specs, frames: int) -> list:
 
 
 def cmd_run(a):
-    from .emu import Job, Poke, Probe, Watch, read_trace, run_job, new_run_dir
+    from .emu import Job, Probe, Watch, read_trace, run_job, new_run_dir
     from .game import clean_rom, state_path
     from .investigate import _macro
     from .macro import total_frames
