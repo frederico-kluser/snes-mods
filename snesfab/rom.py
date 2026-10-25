@@ -213,7 +213,16 @@ def snes_to_pc(addr: int, mapping: str, rom_size: int | None = None) -> int:
             pc = (0x200000 if bank >= 0x80 else 0) | ((bank & 0x3F) << 15) | (off - 0x8000)
         else:
             raise FabError(f"{fmt_addr(addr)} não mapeia ROM em SA-1")
-    elif mapping in ("lorom", "sdd1"):
+    elif mapping == "sdd1":
+        # MMC padrão do S-DD1 ($4804-$4807 = 0/1/2/3): $00-$3F/$80-$BF:8000-FFFF são LoROM FIXA dos 2 primeiros
+        # MiB; $C0-$FF são janelas HiROM de 1 MiB (C/D/E/F = blocos 0/1/2/3); $40-$7D não mapeiam ROM.
+        if bank >= 0xC0:
+            pc = ((bank - 0xC0) << 16) | off
+        elif off >= 0x8000 and (bank <= 0x3F or 0x80 <= bank <= 0xBF):
+            pc = ((bank & 0x3F) << 15) | (off - 0x8000)
+        else:
+            raise FabError(f"{fmt_addr(addr)} não mapeia ROM em S-DD1")
+    elif mapping == "lorom":
         if off >= 0x8000:
             pc = ((bank & 0x7F) << 15) | (off - 0x8000)
         elif 0x40 <= (bank & 0x7F) <= 0x7D and rom_size and rom_size > 0x200000:
@@ -245,7 +254,8 @@ def snes_to_pc(addr: int, mapping: str, rom_size: int | None = None) -> int:
 
 def pc_to_snes(pc: int, mapping: str, fast: bool = True) -> int:
     """Offset no arquivo → endereço de CPU canônico (FastROM $80+ para LoROM, $C0+ para HiROM; SA-1 como o
-    Asar: $00-$3F para os 2 primeiros MiB, $80-$BF para os 2 seguintes). Fora do que o mapa cobre: FabError."""
+    Asar: $00-$3F para os 2 primeiros MiB, $80-$BF para os 2 seguintes; S-DD1: LoROM $80-$BF para os 2
+    primeiros MiB, janelas HiROM $E0-$FF para os 2 seguintes). Fora do que o mapa cobre: FabError."""
     if mapping not in ("lorom", "sa1", "sdd1", "hirom", "exhirom"):
         raise FabError(f"mapa desconhecido: {mapping}")
     limit = 0x800000 if mapping == "exhirom" else 0x400000
@@ -254,6 +264,8 @@ def pc_to_snes(pc: int, mapping: str, fast: bool = True) -> int:
     if mapping == "sa1":
         bank = (0x80 if pc >= 0x200000 else 0) | ((pc >> 15) & 0x3F)
         return (bank << 16) | 0x8000 | (pc & 0x7FFF)
+    if mapping == "sdd1" and pc >= 0x200000:
+        return ((0xC0 | (pc >> 16)) << 16) | (pc & 0xFFFF)
     if mapping in ("lorom", "sdd1"):
         bank = (pc >> 15) & 0x7F
         return ((bank | (0x80 if fast else 0)) << 16) | (0x8000 + (pc & 0x7FFF))

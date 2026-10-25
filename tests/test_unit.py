@@ -56,6 +56,20 @@ class RomTests(unittest.TestCase):
         with self.assertRaises(FabError):
             snes_to_pc(0x408000, "sa1")      # BW-RAM, não ROM
 
+    def test_sdd1_mmc_padrao(self):
+        # S-DD1 (Star Ocean, SF Alpha 2): LoROM fixa só nos 2 primeiros MiB; $C0-$FF são janelas HiROM de 1 MiB.
+        # O SFA2 executa código em $C0:3A91 (= PC 0x3A91) e lê paletas em $DF:0260 (= PC 0x1F0260).
+        self.assertEqual(snes_to_pc(0xC03A91, "sdd1"), 0x003A91)
+        self.assertEqual(snes_to_pc(0xDF0260, "sdd1"), 0x1F0260)
+        self.assertEqual(snes_to_pc(0xBE8260, "sdd1"), 0x1F0260)
+        self.assertEqual(snes_to_pc(0x3E8260, "sdd1"), 0x1F0260)
+        self.assertEqual(snes_to_pc(0xE00000, "sdd1"), 0x200000)
+        self.assertEqual(snes_to_pc(0xFFFFFF, "sdd1"), 0x3FFFFF)
+        self.assertEqual(pc_to_snes(0x1F0260, "sdd1"), 0xBE8260)
+        self.assertEqual(pc_to_snes(0x200000, "sdd1"), 0xE00000)
+        with self.assertRaises(FabError):
+            snes_to_pc(0x408000, "sdd1")      # $40-$7D não mapeiam ROM no S-DD1
+
     def test_pc_to_snes_ida_e_volta(self):
         # achado pelo fuzzing (tests/fuzz/fuzz_rom.py): o endereço canônico tem de voltar ao mesmo byte
         limits = {"lorom": 0x400000, "sdd1": 0x400000, "sa1": 0x400000, "hirom": 0x400000, "exhirom": 0x800000}
@@ -267,6 +281,7 @@ class SerializationTests(unittest.TestCase):
         self.assertEqual((w.addr, w.size), (0x7E1DF9, 1))
         self.assertEqual(w.lua()["mem"], "snesWorkRam")
         self.assertEqual(w.lua()["offset"], 0x1DF9)
+
 
 
 if __name__ == "__main__":
