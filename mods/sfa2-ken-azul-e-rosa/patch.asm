@@ -81,6 +81,12 @@ org $BECE8A
 org $BECEAA
     dw $2908, $18C6, $14A5, $1084
 
+; ── MARCAS de luva por CEL (geradas; bits 2-5 das flags são livres no motor) ──
+; Cada byte marca o cel de UMA pose; o hook 2 lê esta marca e manda só esse cel para a
+; paleta espelho. Resolve a ambiguidade do número de tile entre poses (o mesmo tile é luva
+; numa pose e cabelo noutra). Fonte: work/analise_marcas.py + work/gerar_marcas.py.
+incsrc "marks.asm"
+
 ; ════════════════════════════════════════════════════════════════════════════
 ;  HIJACK 1 — espelho de paleta, antes do DMA da CGRAM
 ;  C0:0312 = LDY #$0500 / STY $4302 (6 bytes, LDY+STY inteiros) → JML + 2 NOP
@@ -129,6 +135,12 @@ CopiaEspelho:
     lda.l $7E07C8                ; cor do uniforme do P1
     cmp.b #$02                   ; roupa preta?
     bne .fim
+    lda.l $7E06D2                ; tom 9 = realce do gi; só pinta a luva quando o gi
+    cmp.b #!preta_0&$FF          ; JÁ é o preto do Akuma (a recarga de paleta pode
+    bne .fim                     ; ainda não ter acontecido no 1.º segundo do round)
+    lda.l $7E06D3
+    cmp.b #!preta_0>>8
+    bne .fim
 
     lda.b #!luva_realce&$FF      ; tom 14 do espelho = realce da luva
     sta.l $7E067C
@@ -167,14 +179,8 @@ AtributoCel:
     and.b #$0E
     cmp.b #$0C                   ; é a paleta 6 (o P1)? P2 (pal 7) fica intacto
     bne .normal
-    lda.l $0015C2,x              ; tile final do sprite (já gravado pelo motor)
-    cmp.b #$40                   ; acima da tabela? não é luva
-    bcs .normal
-    phx
-    tax                          ; M=8: TAX limpa o byte alto de X
-    lda.l GloveTable,x
-    plx
-    and.b #$01
+    lda $0004,y
+    and.b #$04                   ; MARCA por pose (cel) → luva
     beq .normal
 .luva
     pla
@@ -187,13 +193,3 @@ AtributoCel:
     sta.l $0015C3,x
     jml $C05CAF
 
-; 1 = o tile desenha luva (nos 194 frames analisados nunca encosta no cabelo)
-GloveTable:
-    db $00,$00,$00,$00,$01,$00,$01,$00   ; $00-$07
-    db $00,$00,$00,$00,$01,$01,$01,$01   ; $08-$0F
-    db $00,$00,$00,$00,$00,$00,$00,$00   ; $10-$17
-    db $01,$01,$00,$00,$01,$00,$01,$00   ; $18-$1F
-    db $01,$00,$00,$00,$00,$00,$00,$00   ; $20-$27
-    db $00,$00,$00,$00,$00,$00,$00,$00   ; $28-$2F
-    db $00,$00,$00,$00,$00,$01,$01,$00   ; $30-$37
-    db $00,$00,$00,$01,$00,$00,$00,$00   ; $38-$3F

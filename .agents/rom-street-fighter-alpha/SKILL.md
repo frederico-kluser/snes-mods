@@ -174,6 +174,15 @@ Rose; tons do gi do Ken = cores 233-237 = bytes `$1D2,$1D4,$1D6,$1D8,$1DA`. Sele
 - **Sombreado**: rampa de 2 tons para a luva (realce `$2908` + sombra `$1084`, os do gi preto), nunca
   preto único; contorno `$0842` fica de fora. Simulação em `games/sfa2/prints/34-luvas-rampas-sombreado.png`.
 
+**Marca por CEL (a decisão final):** o número de tile **sozinho é ambíguo** — o mesmo tile é luva numa
+pose e cabelo noutra. Por isso a decisão é por cel: `marks.asm` (gerado por
+`work/analise_marcas2.py` + `work/gerar_marcas2.py`) marca **284 cels em 28 poses** no bit 2 das flags
+(livres no motor) e o hook lê essa marca. Critério por **píxel**: o cel entra se a caixa 16x16 contém
+ouro de punho e **não** contém ouro de cabelo. Medido: **119/140 frames com só o cabelo em ouro** (na
+ROM limpa são sempre 2-4 blobs); diff na janela em sincronia f0-30 = **0 px** (a rampa só liga quando
+o gi já é preto, `$06D2 == $2908`) e fora dela as únicas mudanças são ouro → rampa preta.
+A tabela de 14 tiles saiu do código (não cabia no freecode; redundante) — valores no README.
+
 **Tabela de tiles (método da grelha + partição, skill `grid-layout`):** em 194 frames pinta-se o ouro
 (pokes) e recolhe-se o OAM do mesmo frame; o blob maior de ouro é o cabelo e os restantes são punhos;
 um tile entra na `GloveTable` se a caixa 16x16 toca um punho **e nunca toca o cabelo**. Resultado:

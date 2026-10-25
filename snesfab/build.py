@@ -235,7 +235,9 @@ def build_mod(mod_dir: Path, quiet: bool = False) -> dict:
         kind = "freespace" if all(x == 0 for x in orig_bytes) else "overwrite"
         if a >= img.header.offset - 0x10 and b <= img.header.offset + 0x40:
             kind = "header"
-        dr = data_coverage(data_regions, a, b) if kind == "overwrite" else None
+        # 'data' ganha de 'freespace': um byte declarado em data[] pode ter 0x00 no original
+        # (é o caso das flags de cel marcadas) e não é espaço livre do Asar.
+        dr = data_coverage(data_regions, a, b) if kind != "header" else None
         if dr:
             kind = "data"
         reg = {"kind": kind, "start": fmt_addr(snes_a), "end": fmt_addr(pc_to_snes(b - 1, img.mapping)),

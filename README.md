@@ -53,6 +53,32 @@ ROMs; à direita, o patch de pulo duplo do guia (B no chão e B de novo no ar).<
                         build/<id>/<id>.bps + relatório
 ```
 
+## Skills que este projeto usa (e recomenda)
+
+Trabalhar pixel a pixel e achar "que peça desenha o quê" num sprite não é adivinhação. Duas skills
+externas são **recomendadas e usadas** aqui — instale-as por symlink (ver abaixo) para que qualquer
+agente as carregue em qualquer diretório:
+
+| skill | repositório | para quê neste projeto |
+|---|---|---|
+| **`pixel-peep`** | já vive em `.agents/pixel-peep/` | ler/editar pixel-art minúscula: mapa de índices ampliado, varinha mágica RGB, verificação ANTES×DEPOIS pixel-perfect com restauro. Regra de ouro (nasceu de um bug real): **trocar cor de sprite é trocar uma RAMPA, nunca um tom único** — preserve o realce e a sombra ou o objeto achata. |
+| **`grid-layout`** | <https://github.com/frederico-kluser/grid-layout> | **baixe e use**: é a disciplina que faltava para "que tile é a luva". Grelha rotulada + zoom com régua + **sondas determinísticas** + **partição exata** (cada píxel pertence a uma caixa, sem sobreposição nem buraco). O critério "um tile só entra na tabela se a caixa toca o punho e nunca toca o cabelo" saiu dalí — e destravou a cobertura de 2 para 14 tiles. Um componente = uma verificação. |
+
+```bash
+# grid-layout (uma vez por máquina)
+git clone https://github.com/frederico-kluser/grid-layout.git ~/Agent-Skills/grid-layout
+# liga a skill a TODOS os roots de agentes da máquina (idempotente, com backup de links divergentes)
+SKILL_SRC=~/Agent-Skills/grid-layout/skills/grid-layout SKILL_NAME=grid-layout \
+  bash ~/.claude/skills/opensource-project/scripts/link-skill-global.sh
+```
+
+O que a `grid-layout` ajuda de facto (medido): a **metodologia** — nunca estimar a olho, grelha
+rotulada para orientação, partição exata para tomar decisões objetivas, verificação por componente.
+O que **não** ajuda: o motor dela (`gl.mjs`: HTML/CSS + Chromium + diff de screenshot) não tem alvo
+aqui — o alvo é VRAM/CGRAM, não DOM — e o fan-out por subagentes não compensa quando a análise é
+determinística e cada verificação custa uma run de emulador. Está documentado em
+`mods/sfa2-ken-azul-e-rosa/README.md` → "O que a skill `grid-layout` ajudou".
+
 ## Regra de descoberta própria (não negociável)
 
 **Não se usam projetos de terceiros que já tragam a solução pronta** — descompressores, tabelas de

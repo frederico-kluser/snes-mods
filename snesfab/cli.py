@@ -161,6 +161,29 @@ def cmd_state_boot(a):
          "check": "abra a folha de pré-visualização e confirme que o último frame mostra o momento certo"})
 
 
+def _expand_pokes(specs, frames: int) -> list:
+    """Aceita "60:…", "*:…" (todos os frames medidos) ou "10-20:…" (intervalo)."""
+    from .emu import Poke
+    out = []
+    for spec in specs or []:
+        head, sep, rest = spec.partition(":")
+        if not sep:
+            raise FabError(f"poke inválido: {spec!r}", "formato FRAME:ENDEREÇO=VALOR (FRAME pode ser * ou A-B)")
+        if head == "*":
+            quadros = range(frames)
+        elif "-" in head:
+            a, _, b = head.partition("-")
+            try:
+                quadros = range(int(a), int(b) + 1)
+            except ValueError:
+                raise FabError(f"poke inválido: {spec!r}", "intervalo A-B com inteiros")
+        else:
+            quadros = [int(head)]
+        for f in quadros:
+            out.append(Poke.from_spec(f"{f}:{rest}"))
+    return out
+
+
 def cmd_run(a):
     from .emu import Job, Poke, Probe, Watch, read_trace, run_job, new_run_dir
     from .game import clean_rom, state_path
@@ -182,10 +205,10 @@ def cmd_run(a):
     probes = []
     for p in a.probe or []:
         kind, _, addr = p.partition(":")
-        probes.append(Probe(kind, parse_addr(addr)))
+        probes.append(Probe(kind, parse_addr(addr), max_hits=a.probe_max or 500))
     job = Job(frames=frames, state=state_path(a.game, a.state) if a.state else None, macro=steps,
               watches=[Watch.from_spec(w) for w in a.watch or []], probes=probes,
-              pokes=[Poke.from_spec(p) for p in a.poke or []],
+              pokes=_expand_pokes(a.poke, frames),
               capture_every=a.every, warmup=a.warmup or 0, wram_every=a.wram_every or 0)
     run_dir = new_run_dir("run", a.label or a.game)
     r = run_job(rom, job, run_dir, rom_image=load_rom(rom))
@@ -437,6 +460,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--frames", type=int)
     s.add_argument("--watch", action="append", help="nome=7E:0096:2s (repetível)")
     s.add_argument("--probe", action="append", help="write:7E:007D | read:… | exec:80:A420 (repetível)")
+    s.add_argument("--probe-max", type=int, help="máximo de hits guardados por sonda (padrão 500)")
     s.add_argument("--poke", action="append",
                    help="escrita num frame: 60:cgram:01D2:2=0x03E0 | 30:7E:06D2:2=0x1084 (repetível)")
     s.add_argument("--every", type=int, default=2, help="captura 1 frame a cada N (0 = sem frames)")

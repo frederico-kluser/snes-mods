@@ -355,6 +355,16 @@ class SerializationTests(unittest.TestCase):
             with self.assertRaises(FabError, msg=bad):
                 Poke.from_spec(bad)
 
+    def test_poke_expansao_por_frame(self):
+        # "*" = todos os frames medidos; "3-5" = intervalo; "7" = um frame
+        from snesfab.cli import _expand_pokes
+        self.assertEqual([p.frame for p in _expand_pokes(["*:cgram:01DC:2=0x7C1F"], 4)], [0, 1, 2, 3])
+        self.assertEqual([p.frame for p in _expand_pokes(["3-5:7E:06D2:2=1"], 10)], [3, 4, 5])
+        self.assertEqual([p.frame for p in _expand_pokes(["7:cgram:01DC:2=1"], 10)], [7])
+        self.assertTrue(all(p.size == 2 and p.space == "cgram" for p in _expand_pokes(["*:cgram:01DC:2=1"], 2)))
+        with self.assertRaises(FabError):
+            _expand_pokes(["semframe=1"], 3)
+
 
 if __name__ == "__main__":
     unittest.main()

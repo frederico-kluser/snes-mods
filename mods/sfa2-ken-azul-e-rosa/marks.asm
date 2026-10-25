@@ -1,0 +1,573 @@
+; Gerado por work/analise_marcas2.py + work/gerar_marcas2.py — NÃO editar à mão.
+; MARCAS de luva por CEL (bit 2 das flags; o motor faz AND #$C2 em C0:5CA7, logo é livre).
+; Fonte: 452 frames com o ouro pintado + OAM + ponteiro de cels (probe C0:5C8E).
+; Um cel entra se a caixa 16x16 contém OURO de punho e NÃO contém OURO de cabelo (teste por PÍXEL).
+
+org $F8C9B1
+    db $04
+org $F8C9B5
+    db $04
+org $F8C9B9
+    db $04
+org $F8C9BD
+    db $04
+org $F8C9C1
+    db $04
+org $F8C9CD
+    db $04
+org $F8C9D1
+    db $04
+org $F8C9D5
+    db $05
+org $F8C9D9
+    db $05
+org $F8C9DD
+    db $05
+org $F8C9E1
+    db $05
+org $F8C9FA
+    db $04
+org $F8CA06
+    db $04
+org $F8CA0A
+    db $04
+org $F8CA0E
+    db $04
+org $F8CA12
+    db $04
+org $F8CA16
+    db $04
+org $F8CA1A
+    db $04
+org $F8CA1E
+    db $05
+org $F8CA22
+    db $05
+org $F8CA2A
+    db $05
+org $F8CA57
+    db $04
+org $F8CA5B
+    db $04
+org $F8CA5F
+    db $04
+org $F8CA63
+    db $04
+org $F8CA67
+    db $05
+org $F8CA6B
+    db $05
+org $F8CA73
+    db $05
+org $F8CA94
+    db $04
+org $F8CA98
+    db $04
+org $F8CA9C
+    db $04
+org $F8CAA0
+    db $04
+org $F8CAA4
+    db $04
+org $F8CAA8
+    db $05
+org $F8CAAC
+    db $05
+org $F8CAB0
+    db $05
+org $F8CAB4
+    db $05
+org $F8CAB8
+    db $05
+org $F8CAC9
+    db $04
+org $F8CACD
+    db $04
+org $F8CAD1
+    db $04
+org $F8CADD
+    db $04
+org $F8CAE1
+    db $04
+org $F8CAE5
+    db $04
+org $F8CAE9
+    db $04
+org $F8CAED
+    db $04
+org $F8CAFD
+    db $04
+org $F8CB01
+    db $04
+org $F8CB05
+    db $04
+org $F8CB09
+    db $05
+org $F8CB0D
+    db $05
+org $F8CB3A
+    db $05
+org $F8CB3E
+    db $05
+org $F8CB46
+    db $05
+org $F8CB6F
+    db $04
+org $F8CB7F
+    db $05
+org $F8CB83
+    db $05
+org $F8CB87
+    db $05
+org $F8CB8B
+    db $05
+org $F8CBAC
+    db $04
+org $F8CBBC
+    db $04
+org $F8CBC0
+    db $04
+org $F8CBC4
+    db $05
+org $F8CBC8
+    db $05
+org $F8CBCC
+    db $05
+org $F8CBD0
+    db $05
+org $F8CBE5
+    db $04
+org $F8CBED
+    db $04
+org $F8CBF1
+    db $04
+org $F8CBF5
+    db $04
+org $F8CBF9
+    db $04
+org $F8CBFD
+    db $04
+org $F8CC01
+    db $04
+org $F8CC05
+    db $04
+org $F8CC09
+    db $04
+org $F8CC0D
+    db $04
+org $F8CC11
+    db $04
+org $F8CC15
+    db $04
+org $F8CC21
+    db $04
+org $F8CC31
+    db $05
+org $F8CC35
+    db $05
+org $F8CC39
+    db $05
+org $F8CC3D
+    db $05
+org $F8CC87
+    db $04
+org $F8CC93
+    db $04
+org $F8CC9B
+    db $04
+org $F8CC9F
+    db $04
+org $F8CCA3
+    db $04
+org $F8CCA7
+    db $04
+org $F8CCAB
+    db $04
+org $F8CCAF
+    db $04
+org $F8CCB3
+    db $04
+org $F8CCB7
+    db $04
+org $F8CCBF
+    db $05
+org $F8CCE4
+    db $04
+org $F8CCF0
+    db $04
+org $F8CCF4
+    db $04
+org $F8CCF8
+    db $04
+org $F8CCFC
+    db $04
+org $F8CD00
+    db $04
+org $F8CD04
+    db $04
+org $F8CD0C
+    db $04
+org $F8CD10
+    db $04
+org $F8CD14
+    db $04
+org $F8CD18
+    db $04
+org $F8CD1C
+    db $04
+org $F8CD24
+    db $05
+org $F8CD41
+    db $04
+org $F8CD49
+    db $04
+org $F8CD4D
+    db $04
+org $F8CD51
+    db $04
+org $F8CD55
+    db $04
+org $F8CD59
+    db $04
+org $F8CD5D
+    db $04
+org $F8CD61
+    db $04
+org $F8CD65
+    db $04
+org $F8CD7D
+    db $05
+org $F8CD85
+    db $05
+org $F8CDFB
+    db $04
+org $F8CDFF
+    db $04
+org $F8CE03
+    db $04
+org $F8CE0B
+    db $04
+org $F8CE1B
+    db $05
+org $F8CE1F
+    db $05
+org $F8CE75
+    db $C4
+org $F8CE89
+    db $C4
+org $F8CE8D
+    db $C4
+org $F8CE91
+    db $C4
+org $F8CE95
+    db $C4
+org $F8CEA1
+    db $C5
+org $F8CEA5
+    db $C5
+org $F8CEA9
+    db $C5
+org $F8CEAD
+    db $C5
+org $F8CEB2
+    db $C4
+org $F8CEB6
+    db $C4
+org $F8CEBA
+    db $C4
+org $F8CEBE
+    db $C4
+org $F8CEC2
+    db $C4
+org $F8CEC6
+    db $C4
+org $F8CECA
+    db $C4
+org $F8CED2
+    db $C4
+org $F8CED6
+    db $C4
+org $F8CEDA
+    db $C4
+org $F8CEDE
+    db $C4
+org $F8CEE2
+    db $C4
+org $F8CEE6
+    db $C4
+org $F8CEEA
+    db $C4
+org $F8CEF2
+    db $C4
+org $F8CEF6
+    db $C5
+org $F8CEFA
+    db $C5
+org $F8CF0A
+    db $C4
+org $F8D16B
+    db $04
+org $F8D16F
+    db $04
+org $F8D173
+    db $04
+org $F8D177
+    db $04
+org $F8D17B
+    db $04
+org $F8D17F
+    db $04
+org $F8D183
+    db $04
+org $F8D187
+    db $04
+org $F8D18B
+    db $04
+org $F8D18F
+    db $04
+org $F8D193
+    db $04
+org $F8D1B3
+    db $05
+org $F8D1B7
+    db $05
+org $F8D1C4
+    db $04
+org $F8D1C8
+    db $04
+org $F8D1CC
+    db $04
+org $F8D1D0
+    db $04
+org $F8D1D8
+    db $04
+org $F8D1E0
+    db $04
+org $F8D1E8
+    db $04
+org $F8D211
+    db $04
+org $F8D215
+    db $04
+org $F8D219
+    db $04
+org $F8D21D
+    db $04
+org $F8D221
+    db $04
+org $F8D239
+    db $04
+org $F8D23D
+    db $04
+org $F8D241
+    db $05
+org $F8D249
+    db $04
+org $F8D24D
+    db $04
+org $F8D251
+    db $05
+org $F8D255
+    db $05
+org $F8D78A
+    db $04
+org $F8D78E
+    db $04
+org $F8D792
+    db $04
+org $F8D796
+    db $04
+org $F8D79A
+    db $04
+org $F8D79E
+    db $04
+org $F8D7B2
+    db $05
+org $F8D7B6
+    db $05
+org $F8DC18
+    db $04
+org $F8DC20
+    db $04
+org $F8DC28
+    db $04
+org $F8DC2C
+    db $04
+org $F8DC38
+    db $05
+org $F8DC3C
+    db $05
+org $F8DC40
+    db $05
+org $F8DC5D
+    db $04
+org $F8DC65
+    db $04
+org $F8DC69
+    db $04
+org $F8DC6D
+    db $04
+org $F8DC79
+    db $04
+org $F8DC7D
+    db $05
+org $F8DC81
+    db $05
+org $F8DC96
+    db $04
+org $F8DC9A
+    db $04
+org $F8DC9E
+    db $04
+org $F8DCA2
+    db $04
+org $F8DCA6
+    db $04
+org $F8DCAA
+    db $04
+org $F8DCAE
+    db $04
+org $F8DCB2
+    db $04
+org $F8DCB6
+    db $04
+org $F8DCBA
+    db $04
+org $F8DCBE
+    db $04
+org $F8DCCE
+    db $04
+org $F8DCDA
+    db $04
+org $F8DCEA
+    db $04
+org $F8DCEE
+    db $04
+org $F8DCFA
+    db $05
+org $F8DD0F
+    db $04
+org $F8DD17
+    db $04
+org $F8DD1B
+    db $04
+org $F8DD1F
+    db $04
+org $F8DD23
+    db $04
+org $F8DD27
+    db $04
+org $F8DD43
+    db $04
+org $F8DD47
+    db $04
+org $F8DD4B
+    db $04
+org $F8DD4F
+    db $04
+org $F8DD5B
+    db $04
+org $F8DD63
+    db $04
+org $F8DD77
+    db $05
+org $F8DD8C
+    db $04
+org $F8DD90
+    db $04
+org $F8DD94
+    db $04
+org $F8DD98
+    db $04
+org $F8DD9C
+    db $04
+org $F8DDA0
+    db $04
+org $F8DDA4
+    db $04
+org $F8DDA8
+    db $04
+org $F8DDAC
+    db $04
+org $F8DDB0
+    db $04
+org $F8DDB4
+    db $04
+org $F8DDBC
+    db $04
+org $F8DDCC
+    db $04
+org $F8DDDC
+    db $05
+org $F8DDE0
+    db $05
+org $F8DDE5
+    db $04
+org $F8DDE9
+    db $04
+org $F8DDED
+    db $04
+org $F8DDF1
+    db $04
+org $F8DDF5
+    db $04
+org $F8DDF9
+    db $04
+org $F8DDFD
+    db $04
+org $F8DE01
+    db $04
+org $F8DE05
+    db $04
+org $F8DE11
+    db $04
+org $F8DE15
+    db $04
+org $F8DE1D
+    db $04
+org $F8DE25
+    db $05
+org $F8DE29
+    db $05
+org $F8E75A
+    db $04
+org $F8E76E
+    db $05
+org $F8E772
+    db $05
+org $F8E77A
+    db $05
+org $F8E77F
+    db $04
+org $F8E79F
+    db $05
+org $F8E7A3
+    db $05
+org $F8E7A7
+    db $05
+org $F8E7AB
+    db $05
+org $F8E7C0
+    db $04
+org $F8E7C4
+    db $04
+org $F8E7C8
+    db $04
+org $F8E7D0
+    db $04
+org $F8E7D8
+    db $04
+org $F8E7E0
+    db $04
+org $F8E7E8
+    db $04
+org $F8E7FC
+    db $04
+org $F8E800
+    db $04
+org $F8E804
+    db $04
+org $F8E80C
+    db $05
+org $F8E814
+    db $04

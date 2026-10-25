@@ -16,10 +16,20 @@ pele, cabelo, faixas, efeitos, as cores 3-5 do Ken e os outros personagens ficam
   - [x] validação pixel a pixel por "mod × mod com a regra desligada" (mesmo timing): 530 frames,
         18 609 px alterados, **destino sempre na rampa preta (0 erros)**; origem ouro em 95,6% (o resto
         são frames do "flash" de dano, que escreve `$06C0` por fora da rotina hookada).
-  - [ ] poses em que o punho erguido é desenhado por um tile do grupo da cabeça (ex.: `$2E`) ainda
-        mostram essa luva loira — a regra cobre os tiles da **`GloveTable`** (14 tiles:
-        `04 06 0C 0D 0E 0F 18 19 1C 1E 20 35 36 3B`); os tiles que encostam no cabelo em alguma pose
-        (`$28`-`$33`, `$37`, `$39`, `$3A`, `$3E`) ficam de fora para não pintar o cabelo.
+  - [x] **marca por CEL** (`marks.asm`, **284 cels em 28 poses**): resolve a ambiguidade do nº de
+        tile — o mesmo tile é luva numa pose e cabelo noutra, logo a decisão é **por cel** (bit 2 das
+        flags, livres no motor). Gerada de 452 frames com o ouro pintado + OAM + ponteiro de cels;
+        um cel entra se a **caixa 16x16 contém ouro de PUNHO e não contém ouro de CABELO** (teste por
+        píxel, não por caixa do blob — a versão por caixa excluía demais e deixava punhos loiros).
+  - [x] **coerência**: a rampa preta só entra quando o gi já é o preto do Akuma (`$06D2 == $2908`);
+        antes da recarga de paleta a luva fica loira como o resto da roupa (nada de luva preta em gi
+        branco no 1.º segundo).
+  - [x] **medido**: **119/140 frames** das lutas com **só o cabelo em ouro** (na ROM limpa são
+        sempre 2-4 blobs); diff na janela em sincronia (f0-30) = **0 px** (a regra só liga depois da
+        recarga) e no resto as únicas mudanças são ouro → rampa preta. Prints 38/39.
+  - [ ] a `GloveTable` de 14 tiles foi **removida do código** (não cabia no freecode e ficou
+        redundante com as marcas); os valores ficam documentados como evidência para quem quiser
+        estender a poses não cobertas.
   - [ ] ciclo oficial (ciclo 4: 21/46) **não certifica**: os hooks deslocam o RNG da CPU e a luta joga
         diferente do baseline limpo (ver "Armadilha do timing").
 

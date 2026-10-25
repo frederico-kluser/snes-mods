@@ -57,6 +57,11 @@
       "addr": "BE:CEAA",
       "length": 8,
       "evidence": "retrato cor 2 (cores 5-8) — preta do Akuma (rampa do gi COM o realce; simulação)"
+    },
+    {
+      "addr": "FC:49B1",
+      "length": 7780,
+      "evidence": "MARCAS de luva por CEL nas flags (bits 2-5 livres): 217 cels em 28 listas de pose, derivadas de 530 frames com o ouro pintado + OAM + ponteiro de cels (um cel entra se a caixa toca um punho e nunca toca o cabelo)"
     }
   ],
   "max_cycles": 8,
