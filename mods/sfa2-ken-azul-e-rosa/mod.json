@@ -1,16 +1,18 @@
 {
   "id": "sfa2-ken-azul-e-rosa",
-  "title": "Ken de gi azul e rosa (Dan)",
+  "title": "Ken de gi azul, rosa (Dan) e preta (Akuma)",
   "game": "sfa2",
-  "goal": "A cor 0 do Ken continua de gi azul royal e a cor 1 (escolhida com chute) passa de roxa para rosa como o do Dan (cores copiadas da paleta dele na ROM), no sprite da luta e nos retratos (seleção e tela VS); pele, cabelo, faixas, efeitos, as cores 2-5 do Ken e os outros personagens ficam iguais e a lógica da luta não muda.",
+  "goal": "As três primeiras roupas do Ken ganham novas cores: cor 0 (soco) continua de gi azul royal, cor 1 (chute) passa de roxa para rosa como o do Dan e cor 2 (2+ socos) passa de branca para preta como a do Akuma (tons copiados das paletas deles na ROM), no sprite da luta e nos retratos (seleção e tela VS); pele, cabelo, faixas, efeitos, as cores 3-5 do Ken e os outros personagens ficam iguais e a lógica da luta não muda.",
   "patches": ["patch.asm"],
   "expand_to": null,
   "hijacks": [],
   "data": [
     {"addr": "BE:8272", "length": 10, "evidence": "gi cor 0 do lutador (cores 9-13) — azul royal (ev-dbaa2b8b4bf8)"},
     {"addr": "BE:8292", "length": 10, "evidence": "gi cor 1 do lutador (cores 9-13) — rosa do Dan, id 12, bloco 0x1F1E40 (nome DAN + 7E:07A2=12 na grade)"},
+    {"addr": "BE:82B2", "length": 10, "evidence": "gi cor 2 do lutador (cores 9-13) — preta do Akuma, id 2, bloco 0x1F0460 (nome AKUMA + 7E:07A2=2 na grade)"},
     {"addr": "BE:CE6A", "length": 8, "evidence": "retrato cor 0 (cores 5-8) — azul (dump de CGRAM na seleção/VS)"},
-    {"addr": "BE:CE8A", "length": 8, "evidence": "retrato cor 1 (cores 5-8) — rosa do Dan (rampa sem o realce; simulação de 3 rampas)"}
+    {"addr": "BE:CE8A", "length": 8, "evidence": "retrato cor 1 (cores 5-8) — rosa do Dan (rampa sem o realce; simulação de 3 rampas)"},
+    {"addr": "BE:CEAA", "length": 8, "evidence": "retrato cor 2 (cores 5-8) — preta do Akuma (rampa do gi COM o realce; simulação)"}
   ],
   "max_cycles": 8,
   "scenarios": [
@@ -57,6 +59,27 @@
       ]
     },
     {
+      "id": "luta-preta",
+      "desc": "cor 2: Ken de preto como o do Akuma contra a Rose (o original mostra o gi branco)",
+      "state": "luta-ken-2socos-fight",
+      "input": "luta.txt",
+      "frames": 600,
+      "warmup": 40,
+      "capture": {"every": 4},
+      "watch": ["gi1=cgram:01D2:2", "gi2=cgram:01D4:2", "gi3=cgram:01D6:2", "gi4=cgram:01D8:2", "gi5=cgram:01DA:2",
+                "pele=cgram:01C8:2", "cabelo=cgram:01DC:2", "contorno=cgram:01C2:2",
+                "hadouken=cgram:0104:2", "rose=cgram:01F2:2",
+                "x1=7E:0709:2", "hp1=7E:073E", "hp2=7E:09BE"],
+      "checks": [
+        {"id": "gi-preta", "expr": "all((baseline.gi1 != 0x7BDE) | ((gi1 == 0x2908) & (gi2 == 0x18C6) & (gi3 == 0x14A5) & (gi4 == 0x1084) & (gi5 == 0x1084)))", "desc": "cor 2: onde o original mostra o gi branco, o mod mostra os 5 tons do Akuma"},
+        {"id": "gi-branco-na-tela", "expr": "count(baseline.gi1 == 0x7BDE) >= 0.8 * len(gi1)", "desc": "sanidade: o cenário mostra mesmo a cor 2"},
+        {"id": "efeitos-iguais", "expr": "all((baseline.gi1 == 0x7BDE) | (gi1 == baseline.gi1))", "desc": "nas paletas de efeito o mod é igual ao original"},
+        {"id": "pele-cabelo-faixa", "expr": "all(pele == baseline.pele) and all(cabelo == baseline.cabelo) and all(contorno == baseline.contorno)", "desc": "o resto da paleta do Ken não muda"},
+        {"id": "hadouken-e-rose", "expr": "all(hadouken == baseline.hadouken) and all(rose == baseline.rose)", "desc": "Hadouken e Rose intactos"},
+        {"id": "logica-igual", "expr": "all(x1 == baseline.x1) and all(hp1 == baseline.hp1) and all(hp2 == baseline.hp2)", "desc": "a luta transcorre igual (só muda cor)"}
+      ]
+    },
+    {
       "id": "selecao-e-vs",
       "desc": "cor 0: seleção com Y → retrato, sprite e tela VS de gi azul",
       "state": "selecao",
@@ -94,9 +117,28 @@
       ]
     },
     {
-      "id": "regressao-branco",
-      "desc": "regressão: Ken escolhido com 2 socos (cor 2, gi branco) — nada pode mudar",
-      "state": "luta-ken-2socos-fight",
+      "id": "selecao-e-vs-preta",
+      "desc": "cor 2: seleção com Y+X → retrato, sprite e tela VS de preto como o do Akuma (antes do botão o preview mostra a cor 0)",
+      "state": "selecao",
+      "input": "selecao_vs_preta.txt",
+      "frames": 1100,
+      "capture": {"every": 10},
+      "watch": ["ret1=cgram:00CA:2", "ret2=cgram:00CC:2", "ret3=cgram:00CE:2", "ret4=cgram:00D0:2", "retpele=cgram:00D2:2",
+                "spr1=cgram:01D2:2", "spr2=cgram:01D4:2", "vs1=cgram:010A:2", "vs2=cgram:010C:2", "vs3=cgram:010E:2", "vs4=cgram:0110:2"],
+      "checks": [
+        {"id": "retrato-preta", "expr": "all((baseline.ret1 != 0x7B58) | ((ret1 == 0x2908) & (ret2 == 0x18C6) & (ret3 == 0x14A5) & (ret4 == 0x1084)))", "desc": "retrato da seleção (cor 2) com preto do Akuma"},
+        {"id": "retrato-cor0-azul", "expr": "all((baseline.ret1 != 0x113E) | ((ret1 == 0x7E06) & (ret2 == 0x7102) & (ret3 == 0x5881) & (ret4 == 0x3C20)))", "desc": "o preview antes do botão (cor 0) fica azul"},
+        {"id": "vs-preta", "expr": "all((baseline.vs1 != 0x7B58) | ((vs1 == 0x2908) & (vs2 == 0x18C6) & (vs3 == 0x14A5) & (vs4 == 0x1084)))", "desc": "retrato da tela VS (cor 2) com preto do Akuma"},
+        {"id": "sprite-preta", "expr": "all((baseline.spr1 != 0x7BDE) | (baseline.spr2 != 0x7B58) | ((spr1 == 0x2908) & (spr2 == 0x18C6)))", "desc": "sprite pequeno da seleção (cor 2) — guarda por 2 tons: o branco 0x7BDE é igual ao do Ryu (corrigido no ciclo 2)"},
+        {"id": "outros-retratos-iguais", "expr": "all((baseline.ret1 == 0x7B58) | (baseline.ret1 == 0x113E) | (ret1 == baseline.ret1))", "desc": "Ryu, Adon, Chun-Li e Guy iguais ao original"},
+        {"id": "retratos-na-tela", "expr": "count(baseline.ret1 == 0x7B58) >= 20 and count(baseline.vs1 == 0x7B58) >= 20", "desc": "sanidade: o Ken de cor 2 aparece na seleção e na VS"},
+        {"id": "pele-retrato", "expr": "all(retpele == baseline.retpele)", "desc": "a pele do retrato não muda"}
+      ]
+    },
+    {
+      "id": "regressao-verde",
+      "desc": "regressão: Ken escolhido com 2 chutes (cor 3, gi verde-escuro) — nada pode mudar",
+      "state": "luta-ken-2chutes-fight",
       "input": "luta.txt",
       "frames": 600,
       "warmup": 40,
@@ -105,8 +147,8 @@
                 "pele=cgram:01C8:2", "rose=cgram:01F2:2", "hadouken=cgram:0104:2",
                 "x1=7E:0709:2", "hp1=7E:073E", "hp2=7E:09BE"],
       "checks": [
-        {"id": "branco-na-tela", "expr": "count(baseline.gi1 == 0x7BDE) >= 0.8 * len(gi1)", "desc": "sanidade: é mesmo o uniforme branco (cor 2)"},
-        {"id": "branco-igual", "expr": "all(gi1 == baseline.gi1) and all(gi2 == baseline.gi2) and all(gi3 == baseline.gi3) and all(gi4 == baseline.gi4) and all(gi5 == baseline.gi5)", "desc": "a paleta branca (cor 2) fica intacta"},
+        {"id": "verde-na-tela", "expr": "count(baseline.gi1 == 0x39C8) >= 0.8 * len(gi1)", "desc": "sanidade: é mesmo o uniforme verde-escuro (cor 3)"},
+        {"id": "verde-igual", "expr": "all(gi1 == baseline.gi1) and all(gi2 == baseline.gi2) and all(gi3 == baseline.gi3) and all(gi4 == baseline.gi4) and all(gi5 == baseline.gi5)", "desc": "a paleta verde (cor 3) fica intacta"},
         {"id": "resto-igual", "expr": "all(pele == baseline.pele) and all(rose == baseline.rose) and all(hadouken == baseline.hadouken)", "desc": "nada mais muda"},
         {"id": "logica-igual", "expr": "all(x1 == baseline.x1) and all(hp1 == baseline.hp1) and all(hp2 == baseline.hp2)", "desc": "a luta transcorre igual"}
       ]

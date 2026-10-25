@@ -1,0 +1,16 @@
+# do state `selecao`: cursor até o Ken, Y+X (cor 2) → MANUAL (Y) → SPEED (Y) → mapa → KEN VS ROSE
+10
+1 Right
+20
+1 Right
+20
+1 Right
+20
+1 Right
+40
+1 Y+X
+100
+1 Y
+100
+1 Y
+784
