@@ -7,6 +7,8 @@ se houve evolução — até cumprir o objetivo.
 
 ## Comece por aqui
 - Qualquer pedido de mod/ROM/savestate/vídeo de jogo → skill **`snes-mod-factory`** (fluxo completo).
+- Jogo já analisado → a skill dele, **`rom-<jogo>`** (ex.: **`rom-street-fighter-alpha`**): carregue-a
+  antes de tudo e continue de onde ela parou.
 - Iterar até funcionar → skill **`snes-mod-cycle`** (argumento: `mods/<id>`).
 - Código 65816, M/X, hijacks, Asar → skill **`snes-rea-modder`** (protocolo do guia, corrigido).
 - Memória do projeto → skill **`snes-mods-coala-agent-skill`** (`recall` no início, `add` no fim).
@@ -30,6 +32,23 @@ se houve evolução — até cumprir o objetivo.
 7. Só chamar o usuário em bloqueio real (ROM ausente/corrompida, impossível chegar sozinho ao momento
    do jogo, pedido ambíguo que muda o design). O resto: decidir e registrar.
 
+## Uma agent skill por jogo (+ pasta de prints)
+Todo jogo analisado segue o padrão criado com o Street Fighter Alpha 2 (modelo e regras:
+`.agents/snes-mod-factory/references/skill-de-jogo.md`; exemplo vivo: `.agents/rom-street-fighter-alpha/`).
+1. **Skill do jogo `rom-<jogo>`** — criada logo depois do `fab rom add`, em `.agents/rom-<jogo>/SKILL.md`, com
+   links versionados em `.claude/skills/` e `.agents/skills/`. É o diário do jogo: identificação da ROM, como
+   chegar a cada momento (states + macros), fatos com `evidence_id`, estado de cada mod, **como continuar**,
+   perguntas em aberto e os avanços com data.
+2. **Aponta para a memória CoALA**: lista as chaves do jogo (`<id>-…`, `coala.py get <chave>`); os fatos
+   duráveis vão também para `coala.py add`, numa nota que cita o caminho da skill, e o `games/<id>/notes.md`
+   (ingerido pelo `sync`) abre apontando para ela. O motor não ingere `.agents/` nem `.claude/`
+   (`DEFAULT_EXCLUDES`): o elo é por essas notas, não por regra do `ingest.json`.
+3. **Pasta de prints `games/<id>/prints/`** — criada sempre que um jogo começa (ignorada pelo git: são frames
+   de jogo comercial; o `fab doctor` acusa se algo dali for versionado). Cada avanço ou teste ganha um print
+   numerado (`NN-descricao.png`) e uma linha no `LEIA-ME.txt` da pasta — é por ela que o usuário acompanha.
+4. **Ao parar** (pedido do usuário, fim de sessão ou bloqueio): reescreva Estado e Como continuar na skill do
+   jogo e registre o dia em Avanços — outra sessão tem de conseguir continuar só com ela.
+
 ## Mapa do repositório
 | caminho | o quê |
 |---|---|
@@ -39,13 +58,17 @@ se houve evolução — até cumprir o objetivo.
 | `fixtures/testbed/` | ROM homebrew de teste (65816 próprio, LoROM 1 MB) |
 | `tests/` · `tests/fuzz/` | unittest (unitários + ponta a ponta) · alvos de fuzzing atheris (BPS, macro, critérios, ROM) + corpus; crash corrigido vira teste de regressão |
 | `mods/<id>/` | `mod.json` (cenários + checks), `patch.asm`, macros |
-| `games/<id>/` | `game.json`, `notes.md` (versionados) · `states/` (ignorado) |
+| `games/<id>/` | `game.json`, `notes.md` (versionados) · `states/` e `prints/` (ignorados: savestates e os prints dos avanços) |
+| `.agents/<skill>/` | skills do projeto (fábrica, ciclo, 65816, CoALA) e uma `rom-<jogo>` por jogo; links em `.claude/skills/` e `.agents/skills/` |
 | `cycles/<id>/` | `ledger.jsonl` + `cycle-NNN/report.md` (imagens ignoradas pelo git) |
 | `roms/ build/ runs/ work/ tools/` | ignorados: ROMs, builds, runs, projetos Ghidra, toolchain |
 | `tools/manifest.json` | toolchain pinado (JDK 21, Ghidra 12.1.4, MesenCE 2.2.1, Asar 1.91, ffmpeg) com sha256 |
 | `media/inbox/` | o usuário solta vídeos/imagens aqui → `fab media inbox` |
 
 ## Detalhes técnicos que já custaram caro
+- **S-DD1** (SFA2, Star Ocean): só os 2 primeiros MiB ficam em LoROM fixa (`$00-$3F/$80-$BF:8000-FFFF`);
+  `$C0-$FF` são janelas HiROM de 1 MiB (`$4804-$4807`). O SFA2 roda em `$C0:xxxx` com DBR=`$BF` → sondas de
+  MMIO no banco `$BF`. Paletas não são comprimidas (mudar cor = patch de dados); os gráficos são.
 - MesenCE headless pula renderização em velocidade máxima → `Snes.DisableFrameSkipping=true` (o
   `fab setup` garante). Sem isso as capturas ficam 1-5 frames atrasadas em relação à RAM.
 - Savestates só carregam/salvam dentro de callback de execução da CPU (o harness faz isso); states de

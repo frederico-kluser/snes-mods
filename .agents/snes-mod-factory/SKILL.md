@@ -14,11 +14,14 @@ Protocolo de engenharia reversa e de patch 65816: skill **snes-rea-modder**. Cic
 
 0. **Saúde**: `./fab doctor --quick` (falhou → `./fab setup`, que é idempotente).
 1. **Memória**: `python .agents/snes-mods-coala-agent-skill/scripts/coala.py recall "<jogo> <pedido>" --budget 1500`
-   e leia `games/<jogo>/notes.md` se o jogo já existir.
+   e, se o jogo já existir, carregue a skill dele (`rom-<jogo>`) e leia `games/<jogo>/notes.md`.
 2. **Registrar a ROM** (nunca modifique a ROM nem a copie para lugares versionados):
    `./fab rom add "<caminho>" --id <slug>` → `roms/<id>/<id>.sfc` (base limpa, só leitura, sem cabeçalho SMC),
    `games/<id>/game.json` (mapa, chipset, checksum, vetores) e `games/<id>/notes.md`.
    Coprocessador (SA-1, SuperFX, Cx4…) → avise o usuário das limitações antes de prometer.
+   **Skill do jogo + pasta de prints (todo jogo):** crie a skill `rom-<jogo>` pelo modelo
+   `references/skill-de-jogo.md` e a pasta `games/<id>/prints/` (ignorada pelo git). Daí em diante, todo
+   avanço ou teste vira um print numerado ali, com uma linha no `LEIA-ME.txt` da pasta.
 3. **Savestate no momento certo** (o ciclo sempre parte de um state):
    - O usuário deu um `.mss` do Mesen/MesenCE → `./fab state import <jogo> <nome> --file <caminho>`.
    - Senão, tente sozinho: `./fab state boot <jogo> <nome> --macro "120;1 Start;90;1 Start;240"` e abra a
@@ -41,10 +44,13 @@ Protocolo de engenharia reversa e de patch 65816: skill **snes-rea-modder**. Cic
    autoclean/freecode, `expand_to` quando a ROM não tem bancos $10+ livres).
    Inclua sempre um cenário de **regressão** (comportamento original que precisa ficar igual).
 7. **Ciclo**: siga **snes-mod-cycle** (`./fab cycle run mods/<id>` → olhar as imagens → `./fab cycle verdict`)
-   até `objetivo-cumprido` ou `max_cycles`.
+   até `objetivo-cumprido` ou `max_cycles`. Copie o `compare.png`/`trace_compare.png` de cada ciclo para
+   `games/<jogo>/prints/`.
 8. **Entrega**: `build/<id>/<id>.bps` (aplica com Flips/beat ou `./fab bps <rom> <bps> <saída>`),
    `mods/<id>/patch.asm`, `cycles/<id>/…/report.md`. Atualize `games/<jogo>/notes.md` (RAM, rotinas,
-   hijacks com evidência) e grave na memória CoALA o que for durável (`coala.py add --type semantic …`).
+   hijacks com evidência), a skill `rom-<jogo>` (Estado, Como continuar, Avanços) e grave na memória CoALA
+   o que for durável (`coala.py add --type semantic …`). Ao parar no meio, faça o mesmo: a skill do jogo
+   tem de bastar para outra sessão continuar.
 
 ## mod.json — critérios (`checks`)
 
@@ -52,7 +58,8 @@ Expressões sobre os traços de RAM do cenário (mod) e da baseline (ROM limpa, 
 `min(y) < baseline.min(y) - 320`, `count(edges(vy < -60)) >= 2`, `last(air) == 0`,
 `all(x == baseline.x)`, `any(pressed('B') & (air == 1))`, `at(lives, 300) == at(lives, 0)`.
 Funções: min max mean sum abs len first last at window delta changes count any all edges falls
-argmin argmax pressed clip. `watch`: `nome=BB:AAAA[:1|2|4][s]` (s = com sinal).
+argmin argmax pressed clip. `watch`: `nome=BB:AAAA[:1|2|4][s]` (s = com sinal); memória do PPU com
+prefixo e offset em bytes: `nome=cgram:01D2:2` (cor n da paleta = bytes 2n), `vram:`, `oam:`.
 Os checks medem o objetivo; nunca os enfraqueça para "passar".
 
 ## Vídeos e imagens do usuário
@@ -76,4 +83,5 @@ de um jeito que muda o design (ex.: "mais rápido" — andar? correr? tudo?); `f
 - Captura: o frame N mostra o estado da lógica do frame N-1 (atraso normal da OAM); imagem 256x224.
 
 Referências: `references/cli.md` (todos os comandos), `references/snes-ref.md` (mapa de memória,
-registradores, flags, CDL), `references/video.md` (análise visual e veredito).
+registradores, flags, CDL), `references/video.md` (análise visual e veredito),
+`references/skill-de-jogo.md` (a skill de cada jogo e a pasta de prints).
