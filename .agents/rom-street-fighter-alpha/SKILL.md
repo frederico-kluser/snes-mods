@@ -174,11 +174,17 @@ Rose; tons do gi do Ken = cores 233-237 = bytes `$1D2,$1D4,$1D6,$1D8,$1DA`. Sele
 - **Sombreado**: rampa de 2 tons para a luva (realce `$2908` + sombra `$1084`, os do gi preto), nunca
   preto único; contorno `$0842` fica de fora. Simulação em `games/sfa2/prints/34-luvas-rampas-sombreado.png`.
 
+**Tabela de tiles (método da grelha + partição, skill `grid-layout`):** em 194 frames pinta-se o ouro
+(pokes) e recolhe-se o OAM do mesmo frame; o blob maior de ouro é o cabelo e os restantes são punhos;
+um tile entra na `GloveTable` se a caixa 16x16 toca um punho **e nunca toca o cabelo**. Resultado:
+**14 tiles** (`04 06 0C 0D 0E 0F 18 19 1C 1E 20 35 36 3B`) e 26 excluídos por conflito (antes eram só
+`$0C`/`$0E`, achados à mão). Scripts reproduzíveis: `work/analise_grelha.py`, `work/tabela.py`.
+
 **Implementado em `mods/sfa2-ken-azul-e-rosa/patch.asm`** (3 hijacks, todos m8/x16 verificados no build;
 121 B de freecode em `A7:FF31`; 0 avisos):
 1. `C0:0312` (antes do DMA da CGRAM): copia `$06C0-$06DF` → `$0660-$067F` todo VBlank; **só se
    `7E:07C8 == 2`** sobrescreve os tons 14/15 com `$2908`/`$1084`. Outras cores = cópia fiel → luvas loiras.
-2. `C0:5CA9`: se a paleta base é 6 (P1) **e** o tile final (`$0015C2,X`) é `$0C`/`$0E` → `attr ^= $0A`
+2. `C0:5CA9`: se a paleta base é 6 (P1) **e** o tile final (`$0015C2,X`) está na `GloveTable` → `attr ^= $0A`
    (paleta 6→3 = espelho). P2 (pal 7) fica intacto.
 3. `C0:3A9A` (fim da recarga de paleta `C0:3A60-3A9D`): refaz o espelho para não ficar 1 frame atrasado.
 

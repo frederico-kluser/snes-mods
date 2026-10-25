@@ -53,7 +53,7 @@
 | CGRAM pal 11 (`$160-$17F`, cores 176-191) fica **toda a zeros** na luta → livre para paleta espelho (sprite pal 3) | dump completo da CGRAM no frame da luta |
 | Cada **pose** tem a sua lista de cels `[count][x,y,tile,flags]`; a pose parada alterna entre PC `0x3C49A9` e `0x3C49F2` | sonda exec em `C0:5C8E` (dbr=`$FC`, y=`$49A9`) + leitura da ROM; OAM do frame 24 tem os tiles de `0x3C49F2` |
 | Atributo do sprite = `(flags & $C2) ^ $0B`; `$0B` = `$6D` (Ken) e `$2F` (Rose); bits 2-5 das flags são **livres** | desmontagem `C0:5CA4-5CAB` + OAM dump (attrs `$6D`/`$2F`) |
-| Tons 14/15 do sprite = **cabelo E luvas** (ouro); os punhos usam os tiles `$0C`/`$0E` na pose parada | poke dos tons 14/15 → magenta nos dois punhos + na cabeça; OAM por frame |
+| Tons 14/15 do sprite = **cabelo E luvas** (ouro); os punhos usam os tiles `$0C`/`$0E` na pose parada e **14 tiles** ao todo (`GloveTable`: `04 06 0C 0D 0E 0F 18 19 1C 1E 20 35 36 3B`, achados por grelha+partição em 194 frames) | poke dos tons 14/15 → magenta nos dois punhos + na cabeça; OAM por frame |
 | ⚠ **hooks de código deslocam o RNG da CPU** (a luta joga diferente do frame 1: `x1` 203 vs 201) | `fab run` limpa × mod com os 3 hooks, traces de `7E:0709`/`7E:073E` |
 
 

@@ -155,9 +155,10 @@ RecargaPaleta:
 
 ; ── atributo do cel: (flags & $C2) ^ $0B, e a LUVA → paleta 6 vira paleta 3 ──
 ; A luva é reconhecida pelo TILE final do sprite (o motor já o gravou em $0015C2,X antes
-; deste ponto). Medido nas duas poses paradas do Ken: os punhos são os tiles $0C e $0E
-; (a folha de cada pose numera as partes na mesma ordem: pernas $00-$0A, braços/punhos
-; $0C-$0E, tronco $20-$24, cabeça $27-$31). Ver README → Como os cels das luvas foram achados.
+; deste ponto). GloveTable diz quais tiles são luva, levantada por "grelha rotulada +
+; partição" (README → Como os tiles das luvas foram achados): em cada frame pinta-se o
+; ouro, separa-se o blob do cabelo do dos punhos e ficam como luva os tiles cuja caixa
+; 16x16 toca um punho SEM tocar o cabelo (seguros por construção) nos 194 frames medidos.
 AtributoCel:
     lda $0004,y                  ; flags do cel (DBR = banco dos cels)
     and.b #$C2
@@ -167,17 +168,32 @@ AtributoCel:
     cmp.b #$0C                   ; é a paleta 6 (o P1)? P2 (pal 7) fica intacto
     bne .normal
     lda.l $0015C2,x              ; tile final do sprite (já gravado pelo motor)
-    cmp.b #$0C
-    beq .luva
-    cmp.b #$0E
-    beq .luva
-.normal
-    pla
-    sta.l $0015C3,x
-    jml $C05CAF
-
+    cmp.b #$40                   ; acima da tabela? não é luva
+    bcs .normal
+    phx
+    tax                          ; M=8: TAX limpa o byte alto de X
+    lda.l GloveTable,x
+    plx
+    and.b #$01
+    beq .normal
 .luva
     pla
     eor.b #$0A                   ; paleta 6 → 3 (CGRAM 11 = espelho)
     sta.l $0015C3,x
     jml $C05CAF
+
+.normal
+    pla
+    sta.l $0015C3,x
+    jml $C05CAF
+
+; 1 = o tile desenha luva (nos 194 frames analisados nunca encosta no cabelo)
+GloveTable:
+    db $00,$00,$00,$00,$01,$00,$01,$00   ; $00-$07
+    db $00,$00,$00,$00,$01,$01,$01,$01   ; $08-$0F
+    db $00,$00,$00,$00,$00,$00,$00,$00   ; $10-$17
+    db $01,$01,$00,$00,$01,$00,$01,$00   ; $18-$1F
+    db $01,$00,$00,$00,$00,$00,$00,$00   ; $20-$27
+    db $00,$00,$00,$00,$00,$00,$00,$00   ; $28-$2F
+    db $00,$00,$00,$00,$00,$01,$01,$00   ; $30-$37
+    db $00,$00,$00,$01,$00,$00,$00,$00   ; $38-$3F

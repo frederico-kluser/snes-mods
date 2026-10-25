@@ -17,9 +17,32 @@ pele, cabelo, faixas, efeitos, as cores 3-5 do Ken e os outros personagens ficam
         18 609 px alterados, **destino sempre na rampa preta (0 erros)**; origem ouro em 95,6% (o resto
         são frames do "flash" de dano, que escreve `$06C0` por fora da rotina hookada).
   - [ ] poses em que o punho erguido é desenhado por um tile do grupo da cabeça (ex.: `$2E`) ainda
-        mostram essa luva loira — a regra por tile cobre hoje `$0C`/`$0E`.
+        mostram essa luva loira — a regra cobre os tiles da **`GloveTable`** (14 tiles:
+        `04 06 0C 0D 0E 0F 18 19 1C 1E 20 35 36 3B`); os tiles que encostam no cabelo em alguma pose
+        (`$28`-`$33`, `$37`, `$39`, `$3A`, `$3E`) ficam de fora para não pintar o cabelo.
   - [ ] ciclo oficial (ciclo 4: 21/46) **não certifica**: os hooks deslocam o RNG da CPU e a luta joga
         diferente do baseline limpo (ver "Armadilha do timing").
+
+## Como os tiles das luvas foram achados (método da grelha + partição)
+Núcleo da skill `grid-layout` aplicado ao problema (grelha rotulada → partição exata → sonda):
+1. **Sonda**: em cada frame pinta-se o ouro (tons 14/15 → magenta) com `fab run --poke` e recolhe-se o
+   OAM do MESMO frame (`--wram-every 1`): cada sprite dá caixa 16x16 + número de tile.
+2. **Partição**: separam-se os componentes conexos do ouro; o **maior** é o cabelo (massa de ~70-90 px,
+   sempre maior que um punho) e os restantes são punhos.
+3. **Critério**: um tile entra na tabela se a caixa dele toca um punho **e nunca toca o cabelo** nos 194
+   frames analisados. Como nesta roupa o ouro só existe em cabelo e luvas, marcar esse tile não pode
+   pintar cabelo — garantia por construção, não por inspeção.
+4. Resultado: **14 tiles** (antes eram 2, medidos à mão na pose parada) e 26 excluídos por conflito.
+   Script reproduzível: `work/analise_grelha.py` + `work/tabela.py`.
+
+## O que a skill `grid-layout` ajudou (e o que não ajudou)
+- **Ajudou**: o portão "nunca estimes a olho / partição exata" deu um critério objetivo para decidir
+  tile a tile (antes eu testava cel a cel à mão, 18 builds); a "grelha rotulada" virou o índice de
+  tiles; "um componente = uma verificação" virou a tabela verificável.
+- **Não ajudou**: o motor `gl.mjs` (HTML/CSS + Chromium + diff de screenshot) não se aplica — o alvo é
+  VRAM/CGRAM, não DOM; e o multi-subagente não compensa aqui, porque a análise é determinística e cada
+  verificação exige uma run do emulador. O ganho veio da **disciplina**, não do binário.
+
 
 ## O que o patch muda
 - **Dados** (BGR555):
@@ -34,8 +57,9 @@ pele, cabelo, faixas, efeitos, as cores 3-5 do Ken e os outros personagens ficam
      **Só com `$7E:07C8 == 2`** (roupa preta) sobrescreve os tons 14/15 com a rampa da luva
      (`$2908` realce + `$1084` sombra — **2 tons, sombreado preservado**; preto único achata).
   2. `C0:5CA9` (atributo do sprite; m8/x16): se a paleta base é 6 (P1) **e** o tile final
-     (`$0015C2,X`) é `$0C`/`$0E` → `attr ^= $0A` → paleta 3 = **paleta espelho** (CGRAM 11).
-     Como o espelho só difere nos tons 14/15, pele/manga/contorno ficam idênticos por construção.
+     (`$0015C2,X`) está na **`GloveTable`** (14 tiles luva) → `attr ^= $0A` → paleta 3 =
+     **paleta espelho** (CGRAM 11). Como o espelho só difere nos tons 14/15, pele/manga/contorno
+     ficam idênticos por construção.
   3. `C0:3A9A` (fim da recarga de paleta `C0:3A60-3A9D`; m8/x16): refaz o espelho para não ficar
      1 frame atrasado na recarga.
 - BPS de ~339 B; 6 regiões de dados + 3 hijacks; este BPS substitui o `sfa2-ken-gi-azul`
