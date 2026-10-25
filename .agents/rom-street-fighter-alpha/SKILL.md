@@ -50,8 +50,10 @@ description: Skill do jogo Street Fighter Alpha 2 (USA, SNES, chip S-DD1; id `sf
 | `selecao` | `menu-titulo` + `30;1 Start;60;1 Start;60;1 A;60;1 Start;60;1 B;60;1 Start;300` (636 f) | PLAYER SELECT, cursor 1P no Ryu |
 | `luta-ken-rose` | `selecao` + `10;1 Right;20;1 Right;20;1 Right;20;1 Right;40;1 Y;100;1 Y;100;1 Y;1184` (1501 f) | começo da luta Arcade: Ken (cor 0, MANUAL, speed normal) × Rose, Itália |
 | `luta-ken-rose-fight` | `luta-ken-rose` + `430` | logo depois do FIGHT!, controle liberado |
-| `luta-ken-chute` | `selecao` + a macro do `luta-ken-rose` com o 1.º `Y` trocado por `B` (1501 f) | mesma luta com Ken de cor 1 (gi roxo) — regressão |
+| `luta-ken-chute` | `selecao` + a macro do `luta-ken-rose` com o 1.º `Y` trocado por `B` (1501 f) | mesma luta com Ken de cor 1 (gi roxo) |
 | `luta-ken-chute-fight` | `luta-ken-chute` + `430` | logo depois do FIGHT! com o gi roxo |
+| `luta-ken-2socos` | `selecao` + a macro do `luta-ken-rose` com `Y+X` na seleção (1501 f) | mesma luta com Ken de cor 2 (gi branco) |
+| `luta-ken-2socos-fight` | `luta-ken-2socos` + `430` | logo depois do FIGHT! com o gi branco |
 
 Comando: `./fab state boot sfa2 <nome> [--from-state <origem>] --macro "<macro>" --note "…"` e abra a
 `preview_sheet`. Grade da seleção, 1.ª linha: Ryu, Adon, Chun-Li, Guy, **Ken** (4× →). Depois do botão:
@@ -61,12 +63,20 @@ No `luta-ken-rose`, parado: ROUND 1 ~f90-150, FIGHT! ~f180-390, a Rose acerta um
 
 ## Fatos verificados (dinâmico primeiro)
 **Cor do uniforme (seleção).** 1 soco (Y/X/L) = cor 0, gi vermelho; 1 chute (B/A/R) = cor 1, gi roxo
-(prints 10, 13). Leitura estática da rotina de seleção (`C0:DECA`, conta os botões em `$AE/$AF` e usa a
-tabela `$C0:DF28`): 2+ socos juntos = cor 2 (gi branco), 2+ chutes = cor 3 (gi verde-escuro) — **inferido,
-não testado**. Cores 4/5 (laranja / roxo-escuro) vêm de outro caminho (`C0:E0F8`, quando `$1C41,X ≠ 0`,
-tabela `$C0:DF2C`) — gatilho desconhecido. A rotina `C0:DF74` grava a cor do P1 em `$7E:07C8`
+(prints 10, 13). **2+ socos juntos = cor 2 (gi branco) — CONFIRMADO em jogo** (state `luta-ken-2socos`,
+macro com `1 Y+X`; print do state). 2+ chutes = cor 3 (gi verde-escuro) — ainda **inferido**. Cores 4/5
+(laranja / roxo-escuro) vêm de outro caminho (`C0:E0F8`, quando `$1C41,X ≠ 0`, tabela `$C0:DF2C`) —
+gatilho desconhecido. A rotina `C0:DF74` grava a cor do P1 em `$7E:07C8`
 (`ev-1883e2cdf5b2`) e, em espelho (mesmo personagem e mesma cor), troca pelo par (tabela `$C0:CEBC`:
 0↔1, 2↔3, 4↔5).
+
+**Grade de seleção e personagens.** `$7E:07A2` = id do personagem sob o cursor (varredura 2026-10-25).
+Linhas 1-3 = 15 posições: Ryu(0), Adon(5), Chun-Li(4), Guy(7), Ken(1) | Dhalsim(15), Gen(17), Sakura(13),
+Rolento(14), ?(16) | Charlie(3), Birdie(8), Rose(9), ?(6), Sagat(11). **4.ª linha (3 posições, oculta):
+Akuma(2), M.Bison(10), Dan(12)** — só alcançável pelas colunas 1-2 (o `Down` noutras colunas dá a volta;
+wrap horizontal na linha). **Dan = id 12**: gi rosa `$6ADC $521E $419C $311A $2098` (bloco `$DF:1E40`);
+o retrato dele (`0x1F56A0`) usa outros significados nos índices 6-8 (marrons) — para retratos de outros
+personagens, derivar do ramp do gi (simulação print 28).
 
 **Paletas dos lutadores (ROM, sem compressão).** Tabela de ponteiros `$BF:B6C8` (PC `0x1FB6C8`), 16 bits
 por personagem (índice = id do personagem), para o banco `$DF` (janela HiROM → PC `0x1F0000 + ptr`).
@@ -112,11 +122,17 @@ CGRAM: luta → pal 8 = especial do P1, pal 9 = especial do P2, **pal 14 (`$1C0-
 Rose; tons do gi do Ken = cores 233-237 = bytes `$1D2,$1D4,$1D6,$1D8,$1DA`. Seleção → BG pal 6
 (`$0C0`) = retrato grande, pal 14 = sprite pequeno. Tela VS → pal 8 (`$100`) = retrato do P1, pal 9 = P2.
 
-## Estado (2026-10-25, fim do dia) — mod "roupa do Ken": **PRONTO (objetivo-cumprido)**
-- **Pedido do usuário:** "modificar as roupas do Ken no jogo". Cumprido: o uniforme padrão (cor 0) passou
-  de gi vermelho a **gi azul royal** no sprite da luta, no retrato e sprite da seleção, no mapa e na tela
-  VS; pele, cabelo, bandana, faixa preta, efeitos, a cor de chute (roxa) e os outros personagens ficaram
-  iguais e a lógica da luta não mudou.
+## Estado (2026-10-25, fim do dia) — mods do Ken: **PRONTOS (objetivo-cumprido)**
+- **Pedido 1:** "modificar as roupas do Ken" → mod **`sfa2-ken-gi-azul`** PRONTO (ciclo 2,
+  `objetivo-cumprido`): cor 0 de gi vermelho a **azul royal** no sprite, retrato, sprite da seleção, mapa
+  e VS; pele, cabelo, bandana, faixa preta, efeitos, cor de chute e os outros personagens intactos.
+  BPS `build/sfa2-ken-gi-azul/` (137 B), 2 regiões de dados, 0 hijacks. Prints 17-24.
+- **Pedido 2:** "rosa que nem o do Dan, em outra roupa dele" → mod **`sfa2-ken-azul-e-rosa`** PRONTO
+  (ciclo 1, `objetivo-cumprido`, 29/29 checks): cor 0 **continua azul** e a cor 1 (chute) passou de roxa
+  a **rosa como o do Dan** (cópia fiel dos tons do gi dele: `$6ADC $521E $419C $311A $2098`; retrato
+  `$521E $419C $311A $2098`), luta + retratos + VS. Regressão na cor 2 (branco, 2 socos): 0 divergências.
+  BPS `build/sfa2-ken-azul-e-rosa/` (163 B), 4 regiões de dados, 0 hijacks. Prints 25-29.
+  ⚠ Os BPS não empilham (ambos nascem da ROM limpa): para ter as duas cores, use o `azul-e-rosa`.
 - **Mod:** `mods/sfa2-ken-gi-azul/` (patch.asm só de dados; `mod.json` com `data[]`, 3 cenários, 16 checks).
   Build: `build/sfa2-ken-gi-azul/sfa2-ken-gi-azul.bps` (137 B), 2 regiões de dados (`$BE:8272` 10 B +
   `$BE:CE6A` 8 B), 0 hijacks, 0 avisos. Ciclo 2 = 16/16 checks ✅ + veredito visual `objetivo-cumprido`
@@ -142,11 +158,13 @@ Rose; tons do gi do Ken = cores 233-237 = bytes `$1D2,$1D4,$1D6,$1D8,$1DA`. Sele
    mudar o *desenho* da roupa (exigiria descomprimir/recomprimir S-DD1).
 
 ## Perguntas em aberto
-- O que liga `$1C41,X` (cores 4/5)? A seleção com 2+ botões dá mesmo as cores 2/3?
+- O que liga `$1C41,X` (cores 4/5)? A seleção com 2+ chutes dá mesmo a cor 3? (2+ socos = cor 2 está
+  **confirmado**)
 - Tela de vitória / final do Ken: usam a paleta de retrato `0x1F4E60`? (não verificado)
 - X/vida do P2 (`$0989`/`$09BE`) — inferidos pela estrutura, conferir no primeiro baseline.
 - O que dispara a recarga de paleta da rotina `C0:3A8F` a cada ~70 frames em plena luta? (caracterizado
   só por observação: `ev-7d902d01f792`, `ev-d6cb5f0e50b5`)
+- Ids 6 e 16 da grade (nomes não capturados na varredura).
 - Lane estático (`fab re analyze`) ainda não rodou; o loader do ghidra-snes provavelmente vê o S-DD1 como
   LoROM e não cobre o código que roda em `$C0-$FF` (o `ghidra_addr` também devolve LoROM para `sdd1`).
 
@@ -164,3 +182,10 @@ Rose; tons do gi do Ken = cores 233-237 = bytes `$1D2,$1D4,$1D6,$1D8,$1DA`. Sele
   rotina `C0:3A8F` caracterizada (`ev-7d902d01f792`, `ev-d6cb5f0e50b5`) → feature **`warmup`** de
   medição no harness/emu/CLI. Diff pixel a pixel: só os 5 tons do gi mudam; cabeça intacta (print 24);
   olhos do retrato legíveis com `$3C20` (print 23). Prints 17-24. Ferramentas ainda **sem commit**.
+- **2026-10-25 (noite)** — Mod **`sfa2-ken-azul-e-rosa`** PRONTO (ciclo 1, 29/29 checks,
+  `objetivo-cumprido`): cor 1 do Ken de roxa a **rosa como o do Dan** (cópia fiel dos tons do gi dele),
+  cor 0 continua azul; regressão na cor 2 (branco) com 0 divergências. Dan = **id 12** achado pela
+  grade (`$7E:07A2` segue o cursor; nomes na tela confirmam AKUMA=2, M.BISON=10, DAN=12); hipótese
+  "2+ socos = cor 2 (branco)" **confirmada** (state `luta-ken-2socos`); retrato do Dan usa índices
+  próprios (3 rampas simuladas, print 28). Prints 25-29. O trabalho da tarde foi commitado em 3 commits
+  e submetido no PR #9 (ferramentas + mod azul + docs).
