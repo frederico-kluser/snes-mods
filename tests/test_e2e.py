@@ -54,6 +54,28 @@ class E2ETests(unittest.TestCase):
         finally:
             shutil.rmtree(out, ignore_errors=True)
 
+    def test_warmup_starts_measurement_late(self):
+        """warmup: os primeiros N frames correm sem medir (state traz RAM velha da ROM limpa)."""
+        from snesfab.emu import Job, Watch, new_run_dir, read_trace, run_job
+        from snesfab.game import clean_rom, state_path
+        from snesfab.macro import parse_macro
+        from snesfab.rom import load_rom
+        rom = clean_rom("testbed")
+        out = new_run_dir("e2e", "warmup")
+        try:
+            job = Job(frames=40, state=state_path("testbed", "parado"), macro=parse_macro("10;1 B;29"),
+                      watches=[Watch.from_spec("y=7E:0096:2")], capture_every=1, warmup=10)
+            res = run_job(rom, job, out, rom_image=load_rom(rom))
+            tr = read_trace(out)
+            self.assertEqual(res["frames_run"], 40)
+            self.assertEqual(res["frames_measured"], 30)
+            self.assertEqual(res["frames_captured"], 30)
+            self.assertEqual(tr["frame"][0], 10)          # o traço começa no frame 10
+            self.assertEqual(len(tr["frame"]), 30)         # 40 - 10 medidos
+            self.assertEqual(tr["frame"][-1], 39)
+        finally:
+            shutil.rmtree(out, ignore_errors=True)
+
     def test_cycle_detects_evolution_and_regression(self):
         from snesfab.cycle import ledger_status, run_cycle
         from snesfab.util import read_json, write_json

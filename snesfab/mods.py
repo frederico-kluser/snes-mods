@@ -26,6 +26,11 @@ PATCH_TEMPLATE = """; ═══════════════════�
 ; org $XXXXXX
 ;     autoclean jml MinhaRotina    ; + nop se as instruções substituídas somarem 5+ bytes
 
+; ── Patch SÓ de dados (paletas, tabelas…): declare cada região em mod.json → "data" ─
+;   [{{"addr": "BB:AAAA", "length": N, "evidence": "endereço · como foi verificado"}}]
+;   → o build classifica a mudança como `kind: "data"` (fora de build["hijacks"], sem sondas
+;   exec no ciclo); o que NÃO for declarado continua sendo tratado como hijack.
+
 ; freecode                         ; bancos $10-$3F (precisa de ROM ≥ 1 MB: "expand_to" no mod.json)
 ; MinhaRotina:
 ;     ; reproduz aqui as instruções originais sobrescritas
@@ -83,6 +88,7 @@ def new_mod(mid: str, game: str, title: str = "", goal: str = "", mapping: str =
         "patches": ["patch.asm"],
         "expand_to": None,
         "hijacks": [],
+        "data": [],
         "max_cycles": 8,
         "scenarios": [{
             "id": "principal",

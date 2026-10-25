@@ -9,9 +9,10 @@ from pathlib import Path
 
 
 from snesfab import bps
+from snesfab.build import data_coverage, parse_data_regions
 from snesfab.checks import Evaluator, evaluate_checks, score
 from snesfab.disasm65816 import OPCODES, decode, disassemble, find_writer_before, instr_size
-from snesfab.emu import Watch, to_lua
+from snesfab.emu import Watch, job_from_scenario, to_lua
 from snesfab.ghidra import ghidra_addr
 from snesfab.macro import mask_of, parse_macro, total_frames
 from snesfab.paths import BUILD
@@ -113,6 +114,39 @@ class RomTests(unittest.TestCase):
             self.assertEqual(img2.data, img.data)
 
 
+class DataRegionTests(unittest.TestCase):
+    """mod.json → "data" (regiões de dados com evidência): o build não as trata como hijack."""
+
+    def test_parse_e_cobertura(self):
+        regs = parse_data_regions([{"addr": "BE:8272", "length": 10, "evidence": "gi do Ken (ev-x)"},
+                                   {"addr": "BE:CE6A", "length": 8, "evidence": "retrato do Ken"}], "sdd1")
+        self.assertEqual([(r["start_pc"], r["end_pc"]) for r in regs],
+                         [(0x1F0272, 0x1F027C), (0x1F4E6A, 0x1F4E72)])
+        self.assertIs(data_coverage(regs, 0x1F0272, 0x1F027C), regs[0])     # exatamente a região
+        self.assertIs(data_coverage(regs, 0x1F0274, 0x1F0278), regs[0])     # dentro
+        self.assertIsNone(data_coverage(regs, 0x1F0270, 0x1F0276))          # começa antes
+        self.assertIsNone(data_coverage(regs, 0x1F0278, 0x1F0280))          # termina depois
+        self.assertIsNone(data_coverage(regs, 0x000100, 0x000200))          # longe
+        self.assertIsNone(data_coverage([], 0, 16))
+        # espelho LoROM/S-DD1 resolve para o mesmo byte
+        self.assertEqual(parse_data_regions([{"addr": "3E:8272", "length": 1, "evidence": "x"}], "sdd1")[0]["start_pc"],
+                         0x1F0272)
+
+    def test_data_invalido(self):
+        for bad in ({"addr": "BE:8272", "length": 10},                        # sem evidence
+                    {"addr": "BE:8272", "length": 10, "evidence": "   "},     # evidence vazia
+                    {"addr": "BE:8272", "length": 0, "evidence": "x"},        # comprimento zero
+                    {"addr": "BE:8272", "length": -4, "evidence": "x"},       # negativo
+                    {"addr": "BE:8272", "length": "abc", "evidence": "x"},    # não numérico
+                    {"length": 10, "evidence": "x"},                          # sem addr
+                    {"addr": "zz:1", "length": 10, "evidence": "x"},          # addr inválido
+                    "BE:8272"):                                               # não é objeto
+            with self.assertRaises(FabError, msg=repr(bad)):
+                parse_data_regions([bad], "sdd1")
+        self.assertEqual(parse_data_regions([], "lorom"), [])
+        self.assertEqual(parse_data_regions(None, "lorom"), [])
+
+
 class DisasmTests(unittest.TestCase):
     JUMP = bytes.fromhex("E220A572D014A5162980F00EA9B0857DA9018572A9018DFA1DEA60")
 
@@ -174,6 +208,16 @@ class MacroTests(unittest.TestCase):
                 parse_macro(bad)
         self.assertEqual(len(parse_macro("1000x 1 B / 1 -")), 2000)
         self.assertEqual(parse_macro([[20, "B+Right"], [3], [1, 0x8000]]), [(20, 0x8100), (3, 0), (1, 0x8000)])
+
+
+class JobTests(unittest.TestCase):
+    def test_warmup_do_cenario(self):
+        # o state carrega RAM/CGRAM da ROM limpa: cenários de paleta medem só depois da recarga
+        sc = {"frames": 60, "warmup": 40, "input": "30;1 B", "watch": ["gi=cgram:01D2:2"], "capture": {"every": 4}}
+        job = job_from_scenario(sc, Path("."))
+        self.assertEqual((job.frames, job.warmup, job.capture_every), (60, 40, 4))
+        self.assertEqual(job.to_lua_table(Path("out"))["warmup"], 40)
+        self.assertEqual(job_from_scenario({"frames": 10, "input": "5"}, Path(".")).warmup, 0)
 
 
 class ChecksTests(unittest.TestCase):

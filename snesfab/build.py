@@ -1,6 +1,6 @@
 """Montagem de mods com o Asar sobre uma CÓPIA da base limpa, com relatório verificável:
-regiões alteradas (hijacks vs. freespace com RATS), geometria do hijack (regra dos 4 bytes e
-fronteiras de instrução), símbolos WLA e patch BPS para distribuição."""
+regiões alteradas (hijacks vs. dados declarados vs. freespace com RATS), geometria do hijack
+(regra dos 4 bytes e fronteiras de instrução), símbolos WLA e patch BPS para distribuição."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from .disasm65816 import disassemble
 from .game import clean_rom, load_game
 from .mods import load_mod
 from .paths import BUILD, toolchain
-from .rom import fmt_addr, load_rom, parse_addr, pc_to_snes
+from .rom import fmt_addr, load_rom, parse_addr, pc_to_snes, snes_to_pc
 from .util import FabError, now_iso, rel, run, sha256_bytes, write_json
 
 ROM_SIZE_BYTE = {0x20000: 0x07, 0x40000: 0x08, 0x80000: 0x09, 0x100000: 0x0A, 0x200000: 0x0B, 0x400000: 0x0C}
@@ -80,6 +80,40 @@ def _diff_regions(a: bytes, b: bytes, merge_gap: int = 2) -> list[tuple[int, int
         else:
             i += 1
     return regions
+
+
+def parse_data_regions(entries, mapping: str) -> list[dict]:
+    """`mod.json → data[]`: regiões de DADOS (paletas, tabelas…) declaradas com evidência.
+    Devolve cada região em PCs da imagem (`start_pc`, `end_pc`) + o que foi declarado."""
+    out = []
+    for i, d in enumerate(entries or []):
+        if not isinstance(d, dict):
+            raise FabError(f"data[{i}] do mod.json tem de ser um objeto {{addr, length, evidence}}",
+                           'ex.: {"addr": "BE:8272", "length": 10, "evidence": "paleta do Ken ev-…"}')
+        if not str(d.get("evidence", "")).strip():
+            raise FabError(f"data[{i}] do mod.json precisa de 'evidence' (endereço · como foi verificado)",
+                           'ex.: {"addr": "BE:8272", "length": 10, "evidence": "paleta do Ken ev-…"}')
+        try:
+            length = int(d["length"])
+            addr = parse_addr(str(d["addr"]))
+            start = snes_to_pc(addr, mapping)
+        except (KeyError, TypeError, ValueError, FabError) as e:
+            raise FabError(f"data[{i}] do mod.json inválido: {e}",
+                           'use {"addr": "BB:AAAA", "length": N, "evidence": "…"}') from e
+        if length <= 0:
+            raise FabError(f"data[{i}] do mod.json: length tem de ser > 0 (veio {length})")
+        out.append({"addr": fmt_addr(addr), "length": length, "evidence": str(d["evidence"]).strip(),
+                    "start_pc": start, "end_pc": start + length})
+    return out
+
+
+def data_coverage(regions: list[dict], start: int, end: int) -> dict | None:
+    """A região de dados declarada que cobre INTEIRAMENTE [start, end) em PC; None se não houver.
+    (Cobertura parcial NÃO conta: região de dados que estoura vira hijack com problema.)"""
+    for r in regions:
+        if r["start_pc"] <= start and end <= r["end_pc"]:
+            return r
+    return None
 
 
 def _hijack_report(orig: bytes, new: bytes, start_pc: int, end_pc: int, mapping: str, m8: bool, x8: bool,
@@ -178,6 +212,7 @@ def build_mod(mod_dir: Path, quiet: bool = False) -> dict:
                        "corrija o .asm (erros acima) e rode de novo")
 
     new = out_rom.read_bytes()
+    data_regions = parse_data_regions(mod.get("data", []), img.mapping)
     regions = []
     hijacks = []
     flags_hint = {fmt_addr(parse_addr(h["addr"])): (h.get("m", 8) == 8, h.get("x", 8) == 8)
@@ -188,8 +223,14 @@ def build_mod(mod_dir: Path, quiet: bool = False) -> dict:
         kind = "freespace" if all(x == 0 for x in orig_bytes) else "overwrite"
         if a >= img.header.offset - 0x10 and b <= img.header.offset + 0x40:
             kind = "header"
+        dr = data_coverage(data_regions, a, b) if kind == "overwrite" else None
+        if dr:
+            kind = "data"
         reg = {"kind": kind, "start": fmt_addr(snes_a), "end": fmt_addr(pc_to_snes(b - 1, img.mapping)),
                "pc": f"0x{a:06X}", "length": b - a}
+        if kind == "data":
+            reg["declared"] = dr["addr"]
+            reg["evidence"] = dr["evidence"]
         if kind == "freespace" and new[a:a + 4] == b"STAR":
             size = (new[a + 4] | (new[a + 5] << 8)) + 1
             reg["rats"] = {"size": size, "code_start": fmt_addr(pc_to_snes(a + 8, img.mapping))}
@@ -197,11 +238,27 @@ def build_mod(mod_dir: Path, quiet: bool = False) -> dict:
             m8, x8 = flags_hint.get(fmt_addr(snes_a), (True, True))
             h = _hijack_report(base_for_diff, new, a, b, img.mapping, m8, x8, len(new))
             h["flags_source"] = "mod.json hijacks[]" if fmt_addr(snes_a) in flags_hint else "padrão m8,x8 (sem evidência!)"
+            hit = next((r for r in data_regions if r["start_pc"] < b and a < r["end_pc"]), None)
+            if hit:
+                h["ok"] = False
+                h["issues"].append(
+                    f"mudança estoura a região de dados declarada {hit['addr']} ({hit['length']} B): "
+                    "corrija 'data[]' no mod.json ou declare-a como hijack com evidência")
             reg["hijack"] = h
             hijacks.append(h)
         regions.append(reg)
     report["regions"] = regions
     report["hijacks"] = hijacks
+    report["data"] = []
+    for dr in data_regions:
+        seg_base = base_for_diff[dr["start_pc"]:dr["end_pc"]]
+        seg_new = new[dr["start_pc"]:dr["end_pc"]]
+        changed = sum(1 for x, y in zip(seg_base, seg_new) if x != y)
+        entry = {"addr": dr["addr"], "length": dr["length"], "evidence": dr["evidence"],
+                 "bytes_changed": changed, "ok": changed > 0}
+        if changed == 0:
+            entry["issue"] = "nenhum byte mudou aqui: o patch não escreveu na região declarada"
+        report["data"].append(entry)
     report["labels"] = {k: fmt_addr(v) for k, v in sorted(syms.items(), key=lambda kv: kv[1])}
     report["sha256"] = sha256_bytes(new)
     # BPS sobre a base limpa original (sem expansão)

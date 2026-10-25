@@ -197,6 +197,7 @@ class Job:
     probes: list[Probe] = field(default_factory=list)
     capture_every: int = 1
     capture_start: int = 0
+    warmup: int = 0                                  # frames iniciais sem medir (state traz RAM velha)
     wram_every: int = 0
     pokes: list[dict] = field(default_factory=list)  # {"frame", "addr", "value", "size"}
     save_end: Path | None = None
@@ -218,6 +219,7 @@ class Job:
             "harness_version": HARNESS_VERSION,
             "out_dir": out_dir.as_posix(),
             "frames": int(self.frames),
+            "warmup": int(self.warmup),
             "state": self.state.as_posix() if self.state else None,
             "macro": [[int(n), int(m)] for n, m in self.macro],
             "watch": [w.lua() for w in self.watches],
@@ -261,6 +263,8 @@ def run_job(rom_path: Path, job: Job, out_dir: Path, rom_image=None, timeout_s: 
     out_dir.mkdir(parents=True, exist_ok=True)
     if job.frames <= 0:
         raise FabError("o job precisa de frames > 0")
+    if not 0 <= job.warmup < job.frames:
+        raise FabError(f"warmup inválido: {job.warmup}", f"tem de ser 0 <= warmup < frames ({job.frames})")
     if job.state and not Path(job.state).is_file():
         raise FabError(f"savestate não encontrado: {job.state}", "lista com `fab state list <jogo>`")
     # cópia com nome único: isola SRAM/workspace do Mesen por run e documenta o que correu
@@ -382,6 +386,7 @@ def job_from_scenario(sc: dict, base_dir: Path, game_dir: Path | None = None) ->
                       int(p.get("max_hits", 500)), p.get("label", "")) for p in sc.get("probes", [])],
         capture_every=int(cap.get("every", 2)),
         capture_start=int(cap.get("start", 0)),
+        warmup=int(sc.get("warmup", 0)),
         wram_every=int(sc.get("wram_every", 0)),
         pokes=sc.get("pokes", []),
     )

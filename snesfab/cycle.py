@@ -159,7 +159,9 @@ def run_cycle(mod_ref: str | Path, note: str = "") -> dict:
         "goal_met_by_checks": count > 0 and passed == count,
         "visual_change": any((s["compare"].get("frames_divergent") or 0) > 0 for s in scen_reports),
         "build": {"rom": build["rom"], "sha256": build["sha256"][:16], "warnings": build["warnings"],
-                  "hijacks_ok": all(h["ok"] for h in build.get("hijacks", [])), "bps": build.get("bps")},
+                  "hijacks_ok": all(h["ok"] for h in build.get("hijacks", [])),
+                  "data_ok": all(d.get("ok", True) for d in build.get("data", [])),
+                  "data_regions": len(build.get("data", [])), "bps": build.get("bps")},
         "report": rel(cyc_dir / "report.md"),
     })
     append_jsonl(ledger_path, record)
@@ -216,8 +218,13 @@ def _write_report(cyc_dir: Path, rec: dict, mod: dict, scens: list[dict], build:
             L.append("  - original: " + " | ".join(x.split('  ', 1)[-1].strip() for x in h['original'][:3]))
             L.append("  - patch:    " + " | ".join(x.split('  ', 1)[-1].strip() for x in h['patched'][:2]))
         for r in build.get("regions", []):
+            if r.get("kind") == "data":
+                L.append(f"- dados {r['start']}–{r['end']} ({r['length']} B, declarado em 'data[]'): {r['evidence']}")
             if r.get("rats"):
                 L.append(f"- freespace {r['start']}–{r['end']} (RATS {r['rats']['size']} B, código em {r['rats']['code_start']})")
+        for d in build.get("data", []):
+            if not d.get("ok"):
+                L.append(f"- ⚠ dados {d['addr']} ({d['length']} B): {d.get('issue', '')}")
     for s in scens:
         c = s["compare"]
         L += ["", f"## Cenário `{s['id']}` — pontuação {s['score']}",

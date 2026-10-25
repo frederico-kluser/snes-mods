@@ -42,6 +42,7 @@ for _, group in ipairs({ job.watch or {}, job.probes or {}, job.pokes or {} }) d
 end
 
 local frame = 0          -- frames completos desde o início do cenário (após carregar o state)
+local warmup = job.warmup or 0  -- frames iniciais emulados SEM medir (o state traz RAM/CGRAM velhas da ROM limpa)
 local phase = "running"  -- loading → loaded → running → finished
 local finished = false
 local t_start = os.clock()
@@ -249,6 +250,8 @@ local function finish(status, err)
   r:write('  "error": ', err and json_str(err) or "null", ',\n')
   r:write('  "frames_run": ', frame, ',\n')
   r:write('  "frames_requested": ', job.frames, ',\n')
+  r:write('  "warmup": ', warmup, ',\n')
+  r:write('  "frames_measured": ', math.max(0, frame - warmup), ',\n')
   r:write('  "state": ', job.state and json_str(job.state) or "null", ',\n')
   r:write('  "state_loaded": ', tostring(state_ok == true), ',\n')
   r:write('  "frames_captured": ', frames_captured, ',\n')
@@ -310,12 +313,14 @@ local function on_end_frame()
   end
 
   -- frame `frame` acabou de ser emulado com o input cur_mask
-  local row = { tostring(frame), tostring(cur_mask) }
-  for _, w in ipairs(watches) do row[#row + 1] = tostring(read_watch(w)) end
-  tracef:write(table.concat(row, ","), "\n")
+  if frame >= warmup then
+    local row = { tostring(frame), tostring(cur_mask) }
+    for _, w in ipairs(watches) do row[#row + 1] = tostring(read_watch(w)) end
+    tracef:write(table.concat(row, ","), "\n")
 
-  if framesf and frame >= cap_start and (frame - cap_start) % cap_every == 0 then capture_frame() end
-  if wramf and frame % wram_every == 0 then dump_wram() end
+    if framesf and frame >= cap_start and (frame - cap_start) % cap_every == 0 then capture_frame() end
+    if wramf and frame % wram_every == 0 then dump_wram() end
+  end
 
   for _, pk in ipairs(pokes) do
     if pk.frame == frame then

@@ -185,7 +185,7 @@ def cmd_run(a):
         probes.append(Probe(kind, parse_addr(addr)))
     job = Job(frames=frames, state=state_path(a.game, a.state) if a.state else None, macro=steps,
               watches=[Watch.from_spec(w) for w in a.watch or []], probes=probes,
-              capture_every=a.every, wram_every=a.wram_every or 0)
+              capture_every=a.every, warmup=a.warmup or 0, wram_every=a.wram_every or 0)
     run_dir = new_run_dir("run", a.label or a.game)
     r = run_job(rom, job, run_dir, rom_image=load_rom(rom))
     media = postprocess_run(run_dir, title=a.label or f"{a.game} run", video=not a.no_video)
@@ -266,6 +266,7 @@ def cmd_build(a):
     r = build_mod(Path(a.mod) if Path(a.mod).exists() else a.mod)
     keep = {k: r[k] for k in ("mod", "rom", "ok", "warnings", "leak_warning", "bps", "bps_size", "sha256")}
     keep["regions"] = r["regions"]
+    keep["data"] = r.get("data", [])
     keep["labels"] = dict(list(r["labels"].items())[:40])
     out(keep)
     return EXIT_OK if r["ok"] else EXIT_FAIL
@@ -436,6 +437,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--watch", action="append", help="nome=7E:0096:2s (repetível)")
     s.add_argument("--probe", action="append", help="write:7E:007D | read:… | exec:80:A420 (repetível)")
     s.add_argument("--every", type=int, default=2, help="captura 1 frame a cada N (0 = sem frames)")
+    s.add_argument("--warmup", type=int, default=0,
+                   help="frames iniciais emulados sem medir (o state traz RAM/CGRAM velhas da ROM limpa)")
     s.add_argument("--wram-every", type=int)
     s.add_argument("--rom")
     s.add_argument("--mod", help="usa a ROM montada do mod")
