@@ -30,7 +30,7 @@
 | endereço | o que faz | M/X à entrada | evidência |
 |---|---|---|---|
 | `C0:394B-39B1` | paleta do lutador no início do round: cor (`$C8,X`) × 32 + ponteiro `$BF:B6C8[id]` → `$06C0+lado`; paleta especial `$BF:B644[id]` → `$0600+lado` | m8,x16 (no laço) | `ev-dbaa2b8b4bf8` (lê `$DF:0260`) |
-| `C0:3A60-3A9D` | troca a paleta do lutador por paletas de efeito (choque, fogo) durante golpes | m8,x16 | `ev-221b88cc802b` |
+| `C0:3A60-3A9D` | copia paletas do bloco do lutador para `$06C0` (`LDA [$10],Y` em `C0:3A8F`, `STA $06C0,X` em `C0:3A91`): durante efeitos (choque, fogo) E como recarga da paleta a cada ~70 f e em transições de ação (parado: f136/207/271; andando 40 f: f40/110) | m8,x16 | `ev-221b88cc802b`, `ev-7d902d01f792`, `ev-d6cb5f0e50b5` |
 | `C0:DECA` | seleção: conta socos/chutes apertados (`$AE/$AF`) → cor pela tabela `$C0:DF28` | m8,x8 | leitura estática (inferido) |
 | `C0:DF74` | grava a cor do P1 em `$07C8`; em espelho troca pelo par (tabela `$C0:CEBC`: 0↔1, 2↔3, 4↔5) | m8,x8 | `ev-1883e2cdf5b2` |
 | `C0:E0F8` | se `$1C41,X ≠ 0`, cor → 4/5 (tabela `$C0:DF2C`) | m8,x8 | leitura estática (gatilho desconhecido) |
@@ -39,8 +39,9 @@
 | endereço | o quê | evidência |
 |---|---|---|
 | `$BF:B6C8` (PC `0x1FB6C8`) | ponteiros de 16 bits por personagem para os blocos de paletas no banco `$DF` | código `C0:3969` + leituras |
-| `$DF:0260` = `$BE:8260` (PC `0x1F0260`) | Ken: 16 paletas de 32 B (0-5 cores do uniforme, 6 Hadouken, 7-15 efeitos); gi da cor 0 = cores 9-13 | `ev-dbaa2b8b4bf8` + CGRAM pal 14 |
-| PC `0x1F4E60` = `$BE:CE60` | retratos do Ken (6 cores × 32 B); gi = cores 5-8, olhos usam a cor 8 | CGRAM na seleção (BG pal 6) e na tela VS (pal 8) |
+| `$DF:0260` = `$BE:8260` (PC `0x1F0260`) | Ken: 16 paletas de 32 B (0-5 cores do uniforme, 6 Hadouken, 7-15 efeitos); gi da cor 0 = cores 9-13 (`$011E $001B $0017 $0013 $0011` em `0x1F0272`); gi da cor 1 = `$5910 $488C $404A $3828 $3006` | `ev-dbaa2b8b4bf8` + CGRAM pal 14 + dump da base limpa |
+| PC `0x1F4E60` = `$BE:CE60` | retratos do Ken (6 cores × 32 B); gi = cores 5-8 (`$113E $0C7B $0855 $000F` em `0x1F4E6A`), olhos usam a cor 8 | CGRAM na seleção (BG pal 6) e na tela VS (pal 8) |
+| — | rosto, olhos, cabelo e bandana do lutador NÃO usam os tons 9-13 do gi (diff pixel a pixel do mod de cor: 0 px mudam na cabeça) | `runs/cycles/sfa2-ken-gi-azul/cycle-002-luta-soco` × baseline, frame 120 |
 
 ## Savestates (`games/sfa2/states/`)
 | nome | o que mostra | criado como |
@@ -49,13 +50,21 @@
 | `selecao` | PLAYER SELECT, cursor no Ryu | `menu-titulo` + `30;1 Start;60;1 Start;60;1 A;60;1 Start;60;1 B;60;1 Start;300` |
 | `luta-ken-rose` | começo da luta Ken (cor 0) × Rose | `selecao` + `10;1 Right;20;1 Right;20;1 Right;20;1 Right;40;1 Y;100;1 Y;100;1 Y;1184` |
 | `luta-ken-rose-fight` | logo após o FIGHT! (controle liberado) | `luta-ken-rose` + `430` |
+| `luta-ken-chute` | mesma luta com Ken de cor 1 (gi roxo) — regressão | `selecao` + a macro acima com o 1.º `Y` trocado por `B` |
+| `luta-ken-chute-fight` | logo após o FIGHT! com o gi roxo | `luta-ken-chute` + `430` |
+
+⚠ Todo savestate carrega a paleta do lutador já resolvida (feita na ROM limpa): ao carregar num mod de
+cor, a CGRAM mostra as cores velhas até a rotina `C0:3A8F` recarregar da ROM (primeira transição de
+ação ou ~70 frames). Medições de paleta usam `warmup` nos cenários (mod `sfa2-ken-gi-azul`: 40).
 
 ## Hijacks usados por mods
 | endereço | bytes originais | mod | notas |
 |---|---|---|---|
-| — | — | — | o mod do Ken (planejado) é só de dados: nenhum hijack |
+| — | — | `sfa2-ken-gi-azul` | só dados: `$BE:8272` (10 B, gi cor 0) + `$BE:CE6A` (8 B, retrato cor 0); nenhum hijack |
 
 ## Perguntas em aberto
 - O que liga `$1C41,X` (cores 4/5)? A seleção com 2+ botões dá mesmo as cores 2/3?
 - Tela de vitória e final do Ken usam a paleta de retrato `0x1F4E60`?
 - X/vida do P2 inferidos — conferir.
+- O que dispara a recarga de paleta da rotina `C0:3A8F` a cada ~70 frames (parado)? Só caracterizado
+  por observação (`ev-7d902d01f792`/`ev-d6cb5f0e50b5`), sem leitura estática da chamada.

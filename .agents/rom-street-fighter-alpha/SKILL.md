@@ -14,7 +14,8 @@ description: Skill do jogo Street Fighter Alpha 2 (USA, SNES, chip S-DD1; id `sf
 ## Comece por aqui (toda sessão)
 1. `./fab doctor --quick` (Git Bash; no PowerShell `.\fab.ps1 doctor --quick`).
 2. Memória: `python .agents/snes-mods-coala-agent-skill/scripts/coala.py recall "sfa2 street fighter alpha 2 ken paleta gi" --budget 1500`
-   — chaves desta skill: `sfa2-paletas`, `sdd1-mapa`, `skill-por-jogo` (`coala.py get <chave>`).
+   — chaves desta skill: `sfa2-paletas`, `sfa2-recarga-paleta`, `sdd1-mapa`, `skill-por-jogo`
+   (`coala.py get <chave>`).
 3. Leia **Estado** e **Como continuar** abaixo e `games/sfa2/notes.md` (tabelas de RAM/rotinas/states).
 4. **Pasta de prints `games/sfa2/prints/`** (ignorada pelo git: frames de jogo comercial). Garanta que
    existe (`mkdir -p`), comece lendo o `LEIA-ME.txt` e, a cada avanço ou teste, salve um print com o
@@ -49,6 +50,8 @@ description: Skill do jogo Street Fighter Alpha 2 (USA, SNES, chip S-DD1; id `sf
 | `selecao` | `menu-titulo` + `30;1 Start;60;1 Start;60;1 A;60;1 Start;60;1 B;60;1 Start;300` (636 f) | PLAYER SELECT, cursor 1P no Ryu |
 | `luta-ken-rose` | `selecao` + `10;1 Right;20;1 Right;20;1 Right;20;1 Right;40;1 Y;100;1 Y;100;1 Y;1184` (1501 f) | começo da luta Arcade: Ken (cor 0, MANUAL, speed normal) × Rose, Itália |
 | `luta-ken-rose-fight` | `luta-ken-rose` + `430` | logo depois do FIGHT!, controle liberado |
+| `luta-ken-chute` | `selecao` + a macro do `luta-ken-rose` com o 1.º `Y` trocado por `B` (1501 f) | mesma luta com Ken de cor 1 (gi roxo) — regressão |
+| `luta-ken-chute-fight` | `luta-ken-chute` + `430` | logo depois do FIGHT! com o gi roxo |
 
 Comando: `./fab state boot sfa2 <nome> [--from-state <origem>] --macro "<macro>" --note "…"` e abra a
 `preview_sheet`. Grade da seleção, 1.ª linha: Ryu, Adon, Chun-Li, Guy, **Ken** (4× →). Depois do botão:
@@ -73,15 +76,24 @@ Ryu = id 0 (`0x0060`), **Ken = id 1 (`0x0260`)**, Rose = id 9 (`0x1580`, confirm
 - Ken cor 0: `$DF:0260` = PC `0x1F0260` = `$BE:8260`. Índices: 1 contorno/faixa, 2-8 pele/branco,
   **9-13 = gi** (`$011E $001B $0017 $0013 $0011`, do mais claro ao mais escuro), 14-15 cabelo.
   O recolor dos índices 9-13 cobre blusa, mangas e calça e deixa a faixa preta intacta (print 11).
+  Rosto, olhos, cabelo e bandana **não** usam 9-13: no diff pixel a pixel do mod de cor, 0 px mudam na
+  cabeça (print 24). Cor 1 (chute): `$5910 $488C $404A $3828 $3006` em `0x1F0292`.
 - Quem lê (`ev-dbaa2b8b4bf8`, seleção → luta): carregador do início do round `C0:394B-39B1` (laço em
   `C0:3982`: cor = `$C8,X` × 32 + ponteiro → `$06C0+lado`; depois 32 B da paleta especial → `$0600+lado`;
-  m8,x16), cópia de efeitos `C0:3A60-3A9D` (escreve `$06C0,X` em `C0:3A91` só durante efeitos, m8,x16 —
-  `ev-221b88cc802b`) e a tela de seleção (leitura com PC seguinte `C0:DFCC`, todo frame, m16,x16).
+  m8,x16), cópia de efeitos/recarga `C0:3A60-3A9D` (`LDA [$10],Y` em `C0:3A8F` → `STA $06C0,X` em
+  `C0:3A91`, m8,x16 — `ev-221b88cc802b`) e a tela de seleção (leitura com PC seguinte `C0:DFCC`, todo
+  frame, m16,x16).
+- **Recarga da paleta em plena luta** (`ev-7d902d01f792` parado: f136/207/271; `ev-d6cb5f0e50b5` andando:
+  f40/110): a rotina `C0:3A8F` relê o bloco do lutador na ROM e regrava `$06C0` — a cada ~70 f e em
+  transições de ação. Consequência: **o savestate traz a paleta já resolvida da ROM limpa** e um mod de
+  cor só aparece na CGRAM após a 1.ª recarga; os cenários de paleta usam `warmup` (ex.: 40 em
+  `sfa2-ken-gi-azul`). O gatilho do ciclo de ~70 f não está mapeado (pergunta em aberto).
 
 **Retratos (ROM, sem compressão).** Ken em PC `0x1F4E60` (= `$BE:CE60`), 6 paletas de 32 B na mesma ordem
 das cores; Ryu em `0x1F4DA0` (passo de `0xC0` por personagem). Cor 0: **índices 5-8 = gi**
 (`$113E $0C7B $0855 $000F`); 1-4 cabelo/munhequeira, 9-14 pele, 15 contorno. ⚠ Os **olhos** do retrato
-usam o índice 8 (`$000F`) — trocar esse tom muda a cor dos olhos (print 15). A mesma paleta serve a
+usam o índice 8 (`$000F`) — trocar esse tom muda a cor dos olhos (print 15). No mod de gi azul a cor 8
+virou `$3C20` (opção A) e os olhos continuam legíveis (print 23). A mesma paleta serve a
 seleção (BG pal 6) e a tela VS (sprite pal 0) (dumps de CGRAM, print 14).
 
 **WRAM / CGRAM.**
@@ -100,45 +112,41 @@ CGRAM: luta → pal 8 = especial do P1, pal 9 = especial do P2, **pal 14 (`$1C0-
 Rose; tons do gi do Ken = cores 233-237 = bytes `$1D2,$1D4,$1D6,$1D8,$1DA`. Seleção → BG pal 6
 (`$0C0`) = retrato grande, pal 14 = sprite pequeno. Tela VS → pal 8 (`$100`) = retrato do P1, pal 9 = P2.
 
-## Estado (2026-10-25) — mod "roupa do Ken"
-- **Pedido do usuário:** "modificar as roupas do Ken no jogo". **Parado a pedido do usuário** antes de
-  criar o mod (nenhum `fab cycle run` ainda).
-- **Decidido (pelo agente, registrado):** trocar o uniforme padrão (cor 0) de vermelho para **azul royal**
-  — contraste forte, a faixa preta continua visível e não colide com o roxo da cor 1 (print 11; o usuário
-  pode pedir outra cor: são 5 + 4 valores no topo do patch). Mudar também o retrato (seleção e VS) para a
-  roupa ficar coerente. Cores 1-5, efeitos e os outros personagens ficam iguais.
-- **Patch e mod.json desenhados:** `references/rascunho-mod.md` (só dados, sem hijack, sem M/X).
-- **Ferramentas ajustadas nesta sessão** (branch `feat/sfa2-roupa-ken`, **sem commit**):
-  `snesfab/rom.py` (mapa S-DD1 + `test_sdd1_mmc_padrao`), `snesfab/emu.py` (watch `cgram:`/`vram:`/`oam:`
-  + `test_watch_ppu`), `snesfab/setup_tools.py` (o doctor acusa prints versionados), `.gitignore`
-  (`games/*/prints/`).
+## Estado (2026-10-25, fim do dia) — mod "roupa do Ken": **PRONTO (objetivo-cumprido)**
+- **Pedido do usuário:** "modificar as roupas do Ken no jogo". Cumprido: o uniforme padrão (cor 0) passou
+  de gi vermelho a **gi azul royal** no sprite da luta, no retrato e sprite da seleção, no mapa e na tela
+  VS; pele, cabelo, bandana, faixa preta, efeitos, a cor de chute (roxa) e os outros personagens ficaram
+  iguais e a lógica da luta não mudou.
+- **Mod:** `mods/sfa2-ken-gi-azul/` (patch.asm só de dados; `mod.json` com `data[]`, 3 cenários, 16 checks).
+  Build: `build/sfa2-ken-gi-azul/sfa2-ken-gi-azul.bps` (137 B), 2 regiões de dados (`$BE:8272` 10 B +
+  `$BE:CE6A` 8 B), 0 hijacks, 0 avisos. Ciclo 2 = 16/16 checks ✅ + veredito visual `objetivo-cumprido`
+  (regressão roxa com **0 frames divergentes**). Tons novos: `!gi_0..!gi_4 = $7E06 $7102 $60A1 $5060 $4440`;
+  retrato `dw $7E06, $7102, $5881, $3C20` (cor 8 = olhos, **opção A `$3C20`** — conferida no print 23).
+- **Decisões:** azul royal por contraste (não colide com o roxo da cor 1); cores 1-5, efeitos e os outros
+  personagens intocados; retrato coerente com o sprite.
+- **Ferramentas novas nesta sessão** (branch `feat/sfa2-roupa-ken`, **sem commit**): `mod.json → "data"`
+  em `snesfab/build.py` (regiões de dados com evidência, fora de `hijacks`; testes
+  `tests/test_unit.py::DataRegionTests`) e **`warmup`** de medição (`snesfab/emu.py`, `lua/harness.lua`,
+  `fab run --warmup`, `mod.json → scenarios[].warmup`; testes `JobTests` e
+  `tests/test_e2e.py::test_warmup_starts_measurement_late`).
 
-## Como continuar (em ordem)
-1. **Regiões de dados no build** (pendente, necessário): hoje `snesfab/build.py` trata toda região alterada
-   que não era zero como *hijack* (desmonta, avisa "padrão m8,x8 sem evidência") e o ciclo põe uma sonda
-   `exec` nela. Implementar `mod.json → "data": [{"addr": "BE:8272", "length": 10, "evidence": "…"}]`:
-   regiões cobertas viram `kind: "data"` (sem `_hijack_report`, fora de `build["hijacks"]`) e uma região
-   não declarada continua sendo tratada como hijack. Teste unitário + rodar `fab selftest --quick`.
-2. **State da regressão:** `luta-ken-chute` = `selecao` + a macro do `luta-ken-rose` trocando o 1.º `Y` por
-   `B`; depois `luta-ken-chute-fight` = `+430`. Confira na folha que o Ken está de gi roxo.
-3. `./fab mod new sfa2-ken-gi-azul --game sfa2 --title "Ken de gi azul" --goal "<do rascunho>"` e copie
-   `patch.asm`, `mod.json` e as macros de `references/rascunho-mod.md`.
-4. `./fab build mods/sfa2-ken-gi-azul`: esperar 2 regiões de dados (`$BE:8272`, 10 B; `$BE:CE6A`, 8 B)
-   + o checksum do cabeçalho, zero avisos.
-5. `./fab cycle run mods/sfa2-ken-gi-azul --note "gi azul: lutador (cores 9-13) + retrato (5-8)"` → ler o
-   `report.md`, olhar `compare.png`/`trace_compare.png` de cada cenário, **copiar para
-   `games/sfa2/prints/`** com o próximo número e registrar `fab cycle verdict`.
-6. Iterar (uma hipótese por ciclo): olhos do retrato (manter `$000F`? usar um tom neutro?), sprite da
-   luta (conferir se o rosto usa tons 9-13 — print 16), cores 2-5 (fora do escopo, a não ser que o
-   usuário peça).
-7. Pronto quando: todos os checks ✅, imagens conferidas, regressão com 0 frames divergentes →
-   `objetivo-cumprido`, BPS em `build/sfa2-ken-gi-azul/`, `notes.md` e CoALA atualizados e o **Estado**
-   desta skill reescrito.
+## Como continuar
+1. **Entrega pendente do repositório:** commitar as mudanças de ferramenta + mod + docs (`feat/…` → PR →
+   squash, governança `opensource-project`) — **só a pedido do usuário**.
+2. **Outra cor para o gi, se pedido:** trocar só as 5 constantes `!gi_*` do `patch.asm` (+ as 4 do
+   retrato) e rodar `fab cycle run` de novo. As cores 2-5 do uniforme estão em `0x1F0272+0x20*n`
+   (nunca testadas em jogo).
+3. **Olhos do retrato:** opção A (`$3C20`) aplicada e legível (print 23); opção B (`$2C21`) documentada no
+   print 15 — trocar é patch de dados, não precisa de novo ciclo para montar.
+4. **Fora de escopo, só se pedido:** tela de vitória/final do Ken (paleta não verificada), cores 4/5,
+   mudar o *desenho* da roupa (exigiria descomprimir/recomprimir S-DD1).
 
 ## Perguntas em aberto
 - O que liga `$1C41,X` (cores 4/5)? A seleção com 2+ botões dá mesmo as cores 2/3?
 - Tela de vitória / final do Ken: usam a paleta de retrato `0x1F4E60`? (não verificado)
 - X/vida do P2 (`$0989`/`$09BE`) — inferidos pela estrutura, conferir no primeiro baseline.
+- O que dispara a recarga de paleta da rotina `C0:3A8F` a cada ~70 frames em plena luta? (caracterizado
+  só por observação: `ev-7d902d01f792`, `ev-d6cb5f0e50b5`)
 - Lane estático (`fab re analyze`) ainda não rodou; o loader do ghidra-snes provavelmente vê o S-DD1 como
   LoROM e não cobre o código que roda em `$C0-$FF` (o `ghidra_addr` também devolve LoROM para `sdd1`).
 
@@ -149,3 +157,10 @@ Rose; tons do gi do Ken = cores 233-237 = bytes `$1D2,$1D4,$1D6,$1D8,$1DA`. Sele
   (azul royal) por simulação; patch + checks desenhados. Prints 01-16 em `games/sfa2/prints/`.
   Parado a pedido do usuário; criado o padrão "uma skill por jogo + pasta de prints" (CLAUDE.md,
   AGENTS.md, snes-mod-factory, CoALA).
+- **2026-10-25 (tarde)** — Mod `sfa2-ken-gi-azul` criado e **PRONTO**: `data[]` implementado no
+  `build.py` (2 regiões de dados, 0 hijacks, 0 avisos), states de regressão `luta-ken-chute(-fight)`
+  criados e conferidos, ciclo 1 (15/16 — os 40 frames iniciais mediam a paleta velha embutida no state)
+  e ciclo 2 (**16/16, veredito `objetivo-cumprido`**, regressão 0 divergências). Recarga de paleta pela
+  rotina `C0:3A8F` caracterizada (`ev-7d902d01f792`, `ev-d6cb5f0e50b5`) → feature **`warmup`** de
+  medição no harness/emu/CLI. Diff pixel a pixel: só os 5 tons do gi mudam; cabeça intacta (print 24);
+  olhos do retrato legíveis com `$3C20` (print 23). Prints 17-24. Ferramentas ainda **sem commit**.
