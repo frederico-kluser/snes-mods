@@ -1,0 +1,74 @@
+{
+  "id": "sfa2",
+  "title": "STREET FIGHTER ALPHA2",
+  "added": "2026-10-25T00:08:11-03:00",
+  "source_file": "sfa2.sfc",
+  "note": "Street Fighter Alpha 2 (USA) — No-Intro, extraído do zip do usuário",
+  "rom": {
+    "original": "roms/sfa2/original.sfc",
+    "clean": "roms/sfa2/sfa2.sfc"
+  },
+  "smc_header": false,
+  "size": 4194304,
+  "mapping": "sdd1",
+  "header": {
+    "title": "STREET FIGHTER ALPHA2",
+    "map": "lorom",
+    "map_mode": "$32 (LoROM+S-DD1 FastROM)",
+    "fastrom": true,
+    "chipset": "$43 (ROM+S-DD1)",
+    "rom_size_kb": 4096,
+    "sram_size_kb": 0,
+    "region": "$01 (América do Norte)",
+    "dev_id": "$33",
+    "version": "1.0",
+    "checksum": "$DB9A",
+    "checksum_complement": "$2465",
+    "vectors": {
+      "native_cop": "00:FFAC",
+      "native_brk": "00:FFAC",
+      "native_abort": "00:FFAC",
+      "native_nmi": "00:FFE0",
+      "native_irq": "00:FFF0",
+      "emu_cop": "00:FFAC",
+      "emu_abort": "00:FFAC",
+      "emu_nmi": "00:FFAC",
+      "emu_reset": "00:FF90",
+      "emu_irqbrk": "00:FFAC"
+    },
+    "extended": {
+      "maker_code": "01",
+      "game_code": "AUZE",
+      "expansion_ram_kb": 0,
+      "special_version": 0,
+      "cart_subtype": 0
+    },
+    "header_offset": "0x007FC0",
+    "detection_score": 9
+  },
+  "checksum": {
+    "stored": "$DB9A",
+    "computed": "$DB9A",
+    "valid": true
+  },
+  "hashes": {
+    "raw_sha256": "910a29f834199c63c22beddc749baba746da9922196a553255deade59f4fc127",
+    "clean_sha256": "910a29f834199c63c22beddc749baba746da9922196a553255deade59f4fc127",
+    "clean_sha1": "f4ede150b5281f7f5d7e3188c6d9163c2bc66475",
+    "clean_crc32": "9c59ddff"
+  },
+  "detection": [
+    {
+      "map": "lorom",
+      "offset": "0x007FC0",
+      "score": 9,
+      "title": "STREET FIGHTER ALPHA2"
+    },
+    {
+      "map": "hirom",
+      "offset": "0x00FFC0",
+      "score": 7,
+      "title": "STREET FIGHTER ALPHA2"
+    }
+  ]
+}
