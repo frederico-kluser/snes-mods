@@ -33,6 +33,10 @@ Endereços: `BB:AAAA` (`80:A420`, `7E:007D`), `$BBAAAA` ou `0xBBAAAA`. WRAM acei
 | `fab state list <jogo>` | states com nota/origem |
 | `fab run <jogo> [--state s] [--macro …] [--frames N] [--watch n=7E:0096:2s]… [--probe exec:80:A420]… [--every K] [--wram-every K] [--mod id \| --rom …] [--label …] [--no-video]` | cenário headless → `runs/<run>/`: `frames/f*.png`, `video.mp4`, `sheet.png`, `trace.csv`/`trace.png`, `probes.jsonl` |
 
+`--watch` também lê a memória do PPU, com prefixo e offset em bytes: `n=cgram:01D2:2` (cor n da paleta =
+bytes 2n e 2n+1; 256 cores = `$000-$1FF`), `n=vram:8000:2`, `n=oam:0000`. Para despejar a CGRAM inteira de
+uma vez, gere 256 watches `cN=cgram:<2N>:2` (é o que revelou a paleta do Ken no SFA2).
+
 ## Investigação dinâmica (MesenCE headless)
 | comando | o que faz |
 |---|---|

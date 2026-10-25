@@ -282,6 +282,18 @@ class SerializationTests(unittest.TestCase):
         self.assertEqual(w.lua()["mem"], "snesWorkRam")
         self.assertEqual(w.lua()["offset"], 0x1DF9)
 
+    def test_watch_ppu(self):
+        # paletas/VRAM/OAM: offset em bytes na memória do PPU (cor 233 = bytes $1D2-$1D3 da CGRAM)
+        w = Watch.from_spec("gi=cgram:01D2:2")
+        self.assertEqual((w.space, w.addr, w.size), ("cgram", 0x1D2, 2))
+        self.assertEqual(w.lua()["mem"], "snesCgRam")
+        self.assertEqual(w.lua()["offset"], 0x1D2)
+        self.assertEqual(Watch.from_spec(w.to_dict()), w)          # o dicionário volta ao mesmo watch
+        self.assertEqual(Watch.from_spec("t=VRAM:$8000").lua()["mem"], "snesVideoRam")
+        self.assertEqual(Watch.from_spec("o=oam:0x21F").size, 1)
+        for bad in ("c=cgram:01FF:2", "c=cgram:0200", "o=oam:0220", "c=cgram:01:02:2"):
+            with self.assertRaises(FabError, msg=bad):
+                Watch.from_spec(bad)
 
 
 if __name__ == "__main__":

@@ -93,22 +93,40 @@ def to_lua(obj) -> str:
     raise TypeError(f"não serializável para Lua: {type(obj)}")
 
 
+# memória do PPU lida direto pelo harness: o "endereço" é um offset em bytes dentro dela, não um endereço de CPU
+PPU_SPACES = {"cgram": ("snesCgRam", 0x200), "vram": ("snesVideoRam", 0x10000), "oam": ("snesSpriteRam", 0x220)}
+
+
+def _split_space(text: str) -> tuple[str, str]:
+    head, sep, tail = str(text).strip().partition(":")
+    if sep and head.strip().lower() in PPU_SPACES:
+        return head.strip().lower(), tail
+    return "", str(text)
+
+
 @dataclass
 class Watch:
     name: str
     addr: int
     size: int = 1
     signed: bool = False
+    space: str = ""      # "" = espaço da CPU; cgram | vram | oam = offset na memória do PPU
 
     @classmethod
     def from_spec(cls, spec: dict | str) -> "Watch":
-        """Aceita {"name","addr","size","signed"} ou "nome=7E:0096:2s" (tamanho e 's' opcionais)."""
+        """Aceita {"name","addr","size","signed"} ou "nome=7E:0096:2s" (tamanho e 's' opcionais). Paleta, VRAM e
+        OAM levam prefixo e offset em bytes: "gi=cgram:01D2:2" (cor 233 = bytes $1D2-$1D3 da CGRAM)."""
         if isinstance(spec, str):
             import re
             name, _, rest = spec.partition("=")
+            space, rest = _split_space(rest)
             parts = rest.strip().split(":")
             size_txt = "1"
-            if len(parts) == 3:                                   # BB:AAAA:tamanho
+            if space:
+                if len(parts) > 2:
+                    raise FabError(f"watch inválido: {spec!r}", f"formato nome={space}:OFFSET[:1|2|4][s]")
+                addr_txt, size_txt = parts[0], parts[1] if len(parts) == 2 else "1"
+            elif len(parts) == 3:                                 # BB:AAAA:tamanho
                 addr_txt, size_txt = parts[0] + ":" + parts[1], parts[2]
             elif len(parts) == 2 and re.fullmatch(r"[124]s?", parts[1]) and len(parts[0].lstrip("$")) > 2:
                 addr_txt, size_txt = parts                        # $BBAAAA:tamanho
@@ -118,17 +136,27 @@ class Watch:
                 addr_txt = parts[0]
             if not re.fullmatch(r"[124]s?", size_txt):
                 raise FabError(f"watch inválido: {spec!r}", "formato nome=BB:AAAA[:1|2|4][s] (s = com sinal)")
-            return cls(name.strip(), parse_addr(addr_txt), int(size_txt.rstrip("s")), size_txt.endswith("s"))
-        return cls(spec["name"], parse_addr(spec["addr"]), int(spec.get("size", 1)), bool(spec.get("signed", False)))
+            w = cls(name.strip(), parse_addr(addr_txt), int(size_txt.rstrip("s")), size_txt.endswith("s"), space)
+        else:
+            space, addr_txt = _split_space(spec["addr"])
+            w = cls(spec["name"], parse_addr(addr_txt), int(spec.get("size", 1)), bool(spec.get("signed", False)), space)
+        if w.space and w.addr + w.size > PPU_SPACES[w.space][1]:
+            raise FabError(f"watch {w.name}: {w.space}:{w.addr:04X} passa do fim da {w.space.upper()} "
+                           f"(${PPU_SPACES[w.space][1]:X} bytes)", "o offset é em bytes: cor n da CGRAM = 2·n")
+        return w
 
     def lua(self) -> dict:
+        if self.space:
+            return {"name": self.name, "mem": PPU_SPACES[self.space][0], "offset": self.addr, "size": self.size,
+                    "signed": self.signed}
         off = wram_offset(self.addr)
         if off is not None:
             return {"name": self.name, "mem": "snesWorkRam", "offset": off, "size": self.size, "signed": self.signed}
         return {"name": self.name, "mem": "snesDebug", "offset": self.addr, "size": self.size, "signed": self.signed}
 
     def to_dict(self) -> dict:
-        return {"name": self.name, "addr": fmt_addr(self.addr), "size": self.size, "signed": self.signed}
+        addr = f"{self.space}:{self.addr:04X}" if self.space else fmt_addr(self.addr)
+        return {"name": self.name, "addr": addr, "size": self.size, "signed": self.signed}
 
 
 @dataclass
@@ -205,7 +233,7 @@ class Job:
 
 def resolve_mem_names(table: dict) -> dict:
     """O harness resolve nomes de memType em runtime; aqui só validamos os nomes usados."""
-    valid = {"snesWorkRam", "snesDebug", "snesMemory", "snesPrgRom", "snesSaveRam"}
+    valid = {"snesWorkRam", "snesDebug", "snesMemory", "snesPrgRom", "snesSaveRam", *(m for m, _ in PPU_SPACES.values())}
     for group in ("watch", "probes", "pokes"):
         for item in table.get(group, []):
             if item["mem"] not in valid:
