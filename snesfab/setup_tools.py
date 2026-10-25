@@ -271,8 +271,9 @@ def doctor(quick: bool = False, rea: bool = False) -> dict:
     # ROMs nunca versionadas
     try:
         tracked = run(["git", "-C", ROOT, "ls-files"], timeout=30).stdout.splitlines()
-        bad = [f for f in tracked if f.lower().endswith((".sfc", ".smc", ".swc", ".fig", ".mss", ".srm", ".bps"))]
-        add("OK" if not bad else "FAIL", "git sem ROMs/states", ", ".join(bad[:5]) or "nenhum arquivo proibido versionado")
+        bad = [f for f in tracked if f.lower().endswith((".sfc", ".smc", ".swc", ".fig", ".mss", ".srm", ".bps"))
+               or (f.startswith("games/") and f.split("/")[2:3] == ["prints"])]   # prints = frames do jogo
+        add("OK" if not bad else "FAIL", "git sem ROMs/states/prints", ", ".join(bad[:5]) or "nenhum arquivo proibido versionado")
     except FabError:
         add("WARN", "git", "não consegui listar arquivos")
     mcp = ROOT / ".mcp.json"

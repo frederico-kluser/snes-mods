@@ -15,6 +15,7 @@ work/
 cycles/**/*.png
 cycles/**/*.mp4
 games/*/states/
+games/*/prints/
 media/inbox/*
 !media/inbox/.gitkeep
 
