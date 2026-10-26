@@ -247,13 +247,37 @@ class Job:
     save_end: Path | None = None
     save_at: list[dict] = field(default_factory=list)  # {"frame", "path"}
     cdl_out: Path | None = None                         # dump do Code/Data Log da ROM no fim
+    ppu_frames: list[int] = field(default_factory=list)   # snapshot OAM+CGRAM+VRAM nestes frames
+    ppu_every: int = 0                                    # … ou a cada N frames medidos
+    false_color: list[int] = field(default_factory=list)  # frames com a CGRAM em falsa cor (índice por píxel)
+    capture_frames: list[int] = field(default_factory=list)  # frames avulsos a capturar (além de capture_every)
+    wram_frames: list[int] = field(default_factory=list)     # frames avulsos com dump da WRAM
+    dma_log: bool = False                                     # registra cada DMA/HDMA (fonte, destino, quem dispara)
+    vram_uploads: bool = False                                # grava o que cada DMA deixou na VRAM (export de gráficos)
 
     def to_lua_table(self, out_dir: Path, rom=None) -> dict:
         probes = []
         for p in self.probes:
             probes.extend(p.lua(rom))
         pokes = [pk.lua() for pk in self.pokes]
-        return {
+        extra = {}
+        if self.ppu_frames or self.ppu_every:
+            extra["ppu_frames"] = sorted({int(f) for f in self.ppu_frames})
+            extra["ppu_every"] = int(self.ppu_every)
+        if self.false_color:
+            from .ppu import FALSE_COLORS
+            extra["false_color"] = sorted({int(f) for f in self.false_color})
+            extra["false_color_values"] = list(FALSE_COLORS)
+        if self.wram_frames:
+            extra["wram_frames"] = sorted({int(f) for f in self.wram_frames})
+        if self.dma_log or self.vram_uploads:
+            extra["dma_log"] = True
+        if self.vram_uploads:
+            extra["vram_uploads"] = True
+        capture = {"every": int(self.capture_every), "start": int(self.capture_start)}
+        if self.capture_frames:
+            capture["frames"] = sorted({int(f) for f in self.capture_frames})
+        return extra | {
             "harness_version": HARNESS_VERSION,
             "out_dir": out_dir.as_posix(),
             "frames": int(self.frames),
@@ -262,7 +286,7 @@ class Job:
             "macro": [[int(n), int(m)] for n, m in self.macro],
             "watch": [w.lua() for w in self.watches],
             "probes": probes,
-            "capture": {"every": int(self.capture_every), "start": int(self.capture_start)},
+            "capture": capture,
             "wram_every": int(self.wram_every),
             "pokes": pokes,
             "save_end": self.save_end.as_posix() if self.save_end else None,
@@ -315,6 +339,8 @@ def run_job(rom_path: Path, job: Job, out_dir: Path, rom_image=None, timeout_s: 
         timeout_s = 30 + job.frames // 25
         if job.wram_every:
             timeout_s += int(job.frames / job.wram_every * 0.3)
+        n_ppu = len(set(job.ppu_frames)) + (job.frames // job.ppu_every if job.ppu_every else 0)
+        timeout_s += int(n_ppu * 0.4)
     cmd = [tc.mesen, "--testRunner", f"--timeout={timeout_s}", LUA / "harness.lua", run_rom]
     proc = run(cmd, env={"SNESFAB_JOB": (out_dir / "job.lua").as_posix()}, timeout=timeout_s + 60)
     _cleanup_mesen_artifacts(tc.mesen_dir, run_rom.stem)
@@ -393,6 +419,62 @@ def read_probes(run_dir: Path) -> list[dict]:
     return out
 
 
+PPU_SNAPSHOT_SIZE = 0x220 + 0x200 + 0x10000     # OAM + CGRAM + VRAM
+
+
+@dataclass
+class PpuSnapshot:
+    """Memória do PPU no momento em que o frame foi desenhado (ver harness: display ligado)."""
+    frame: int
+    oam: bytes
+    cgram: bytes
+    vram: bytes
+    meta: dict            # event (start | irq@N | end), scanline, oamMode, oamBaseAddress, oamAddressOffset, …
+
+    @property
+    def obj_mode(self) -> int:
+        return int(self.meta.get("oamMode") or 0)
+
+    @property
+    def obj_base(self) -> int:
+        return int(self.meta.get("oamBaseAddress") or 0)
+
+    @property
+    def obj_offset(self) -> int:
+        return int(self.meta.get("oamAddressOffset") or 0x1000)
+
+
+def read_ppu(run_dir: Path) -> dict[int, PpuSnapshot]:
+    """Snapshots do PPU de uma run (ppu.bin + ppu_index.jsonl), por frame."""
+    run_dir = Path(run_dir)
+    idx, raw = run_dir / "ppu_index.jsonl", run_dir / "ppu.bin"
+    if not idx.exists() or not raw.exists():
+        return {}
+    data = raw.read_bytes()
+    out = {}
+    with open(idx, encoding="utf-8") as f:
+        for i, line in enumerate(x for x in f if x.strip()):
+            meta = json.loads(line)
+            base = i * PPU_SNAPSHOT_SIZE
+            chunk = data[base:base + PPU_SNAPSHOT_SIZE]
+            if len(chunk) < PPU_SNAPSHOT_SIZE:
+                break
+            out[int(meta["frame"])] = PpuSnapshot(int(meta["frame"]), chunk[:0x220], chunk[0x220:0x420],
+                                                  chunk[0x420:], meta)
+    return out
+
+
+def read_wram(run_dir: Path) -> dict[int, bytes]:
+    """Dumps de WRAM (128 KiB cada) de uma run, por frame (precisa do wram_index.csv do harness)."""
+    run_dir = Path(run_dir)
+    idx, raw = run_dir / "wram_index.csv", run_dir / "wram.bin"
+    if not idx.exists() or not raw.exists():
+        return {}
+    data = raw.read_bytes()
+    frames = [int(x) for x in idx.read_text(encoding="utf-8").split()[1:]]
+    return {f: data[i * 0x20000:(i + 1) * 0x20000] for i, f in enumerate(frames) if (i + 1) * 0x20000 <= len(data)}
+
+
 def job_from_scenario(sc: dict, base_dir: Path, game_dir: Path | None = None) -> Job:
     """Constrói um Job a partir de um cenário (mod.json → scenarios[]) ou de opções da CLI."""
     def resolve(p):
@@ -427,4 +509,7 @@ def job_from_scenario(sc: dict, base_dir: Path, game_dir: Path | None = None) ->
         warmup=int(sc.get("warmup", 0)),
         wram_every=int(sc.get("wram_every", 0)),
         pokes=[Poke.from_spec(p) for p in sc.get("pokes", [])],
+        wram_frames=[int(f) for f in sc.get("wram_frames", [])],
+        ppu_frames=[int(f) for f in sc.get("ppu_frames", [])],
+        false_color=[int(f) for f in sc.get("false_color", [])],
     )

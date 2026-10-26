@@ -1,7 +1,7 @@
 {
   "id": "testbed",
   "title": "SNESFAB TESTBED",
-  "added": "2026-10-24T19:12:26-03:00",
+  "added": "2026-10-25T19:38:42-03:00",
   "source_file": "testbed.sfc",
   "note": "ROM homebrew do repositório (fixtures/testbed) — material próprio",
   "rom": {
@@ -22,34 +22,34 @@
     "region": "$01 (América do Norte)",
     "dev_id": "$00",
     "version": "1.0",
-    "checksum": "$72B4",
-    "checksum_complement": "$8D4B",
+    "checksum": "$073D",
+    "checksum_complement": "$F8C2",
     "vectors": {
-      "native_cop": "00:82E6",
-      "native_brk": "00:82E6",
-      "native_abort": "00:82E6",
-      "native_nmi": "00:82D1",
-      "native_irq": "00:82E6",
-      "emu_cop": "00:82E6",
-      "emu_abort": "00:82E6",
-      "emu_nmi": "00:82E6",
+      "native_cop": "00:82E9",
+      "native_brk": "00:82E9",
+      "native_abort": "00:82E9",
+      "native_nmi": "00:82D4",
+      "native_irq": "00:82E9",
+      "emu_cop": "00:82E9",
+      "emu_abort": "00:82E9",
+      "emu_nmi": "00:82E9",
       "emu_reset": "00:8000",
-      "emu_irqbrk": "00:82E6"
+      "emu_irqbrk": "00:82E9"
     },
     "extended": {},
     "header_offset": "0x007FC0",
     "detection_score": 9
   },
   "checksum": {
-    "stored": "$72B4",
-    "computed": "$72B4",
+    "stored": "$073D",
+    "computed": "$073D",
     "valid": true
   },
   "hashes": {
-    "raw_sha256": "5e7ba251cc1693579094978f3f69e23cf66b9bf7a299c06c70d57c6e1169a08a",
-    "clean_sha256": "5e7ba251cc1693579094978f3f69e23cf66b9bf7a299c06c70d57c6e1169a08a",
-    "clean_sha1": "313544971297dde38ac6e18223bb7e2377f4f7f2",
-    "clean_crc32": "3d98dbae"
+    "raw_sha256": "4f7c11b4ab23e0679aa9905289c3a18c65a1045e62da69f5e8b3a847ecee4777",
+    "clean_sha256": "4f7c11b4ab23e0679aa9905289c3a18c65a1045e62da69f5e8b3a847ecee4777",
+    "clean_sha1": "d9969d5487c8b137c9bbb399b9357b8b86bb59be",
+    "clean_crc32": "21e600a6"
   },
   "detection": [
     {
