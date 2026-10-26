@@ -70,5 +70,19 @@
       "score": 7,
       "title": "STREET FIGHTER ALPHA2"
     }
-  ]
+  ],
+  "sprite_engine": {
+    "kind": "cel-list",
+    "probe": "C0:5C8E",
+    "pointer": "y",
+    "bank": "dbr",
+    "count_size": 1,
+    "record": 4,
+    "x": 0,
+    "y": 1,
+    "tile": 2,
+    "flags": 3,
+    "mark_bit": 2,
+    "evidence": "sonda exec em C0:5C8E: Y = offset da lista de cels da pose, DBR = banco (Ken $FC, Rose $FF); lista [n][x,y,tile,flags]; o atributo do sprite é (flags & $C2) ^ $0B em C0:5CA7 → bits 2-5 das flags livres"
+  }
 }

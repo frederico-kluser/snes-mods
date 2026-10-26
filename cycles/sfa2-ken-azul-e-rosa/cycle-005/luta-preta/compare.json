@@ -1,0 +1,285 @@
+{
+  "baseline_run": "runs/baselines/sfa2/luta-preta-15877d1d5087727e",
+  "mod_run": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-005-luta-preta",
+  "frames_compared": 140,
+  "first_divergence_frame": 44,
+  "frames_divergent": 81,
+  "mean_changed_pct": 0.089,
+  "max_changed_pct": 0.208,
+  "max_changed_frame": 316,
+  "compare_sheet": "cycles/sfa2-ken-azul-e-rosa/cycle-005/luta-preta/compare.png",
+  "divergence_plot": "cycles/sfa2-ken-azul-e-rosa/cycle-005/luta-preta/divergence.png",
+  "trace_plot": "cycles/sfa2-ken-azul-e-rosa/cycle-005/luta-preta/trace_compare.png",
+  "trace_stats": {
+    "gi1": {
+      "mod": {
+        "min": 10504,
+        "max": 31710,
+        "first": 31710,
+        "last": 10504
+      },
+      "baseline": {
+        "min": 10504,
+        "max": 31710,
+        "first": 31710,
+        "last": 10504
+      },
+      "first_diff_frame": null
+    },
+    "gi2": {
+      "mod": {
+        "min": 6342,
+        "max": 31576,
+        "first": 31576,
+        "last": 6342
+      },
+      "baseline": {
+        "min": 6342,
+        "max": 31576,
+        "first": 31576,
+        "last": 6342
+      },
+      "first_diff_frame": null
+    },
+    "gi3": {
+      "mod": {
+        "min": 5285,
+        "max": 31444,
+        "first": 31444,
+        "last": 5285
+      },
+      "baseline": {
+        "min": 5285,
+        "max": 31444,
+        "first": 31444,
+        "last": 5285
+      },
+      "first_diff_frame": null
+    },
+    "gi4": {
+      "mod": {
+        "min": 4228,
+        "max": 30720,
+        "first": 27216,
+        "last": 4228
+      },
+      "baseline": {
+        "min": 4228,
+        "max": 30720,
+        "first": 27216,
+        "last": 4228
+      },
+      "first_diff_frame": null
+    },
+    "gi5": {
+      "mod": {
+        "min": 4228,
+        "max": 24576,
+        "first": 20876,
+        "last": 4228
+      },
+      "baseline": {
+        "min": 4228,
+        "max": 24576,
+        "first": 20876,
+        "last": 4228
+      },
+      "first_diff_frame": null
+    },
+    "pele": {
+      "mod": {
+        "min": 12892,
+        "max": 31050,
+        "first": 12892,
+        "last": 12892
+      },
+      "baseline": {
+        "min": 12892,
+        "max": 31050,
+        "first": 12892,
+        "last": 12892
+      },
+      "first_diff_frame": null
+    },
+    "cabelo": {
+      "mod": {
+        "min": 13214,
+        "max": 30978,
+        "first": 13214,
+        "last": 13214
+      },
+      "baseline": {
+        "min": 13214,
+        "max": 30978,
+        "first": 13214,
+        "last": 13214
+      },
+      "first_diff_frame": null
+    },
+    "cab15": {
+      "mod": {
+        "min": 668,
+        "max": 24704,
+        "first": 668,
+        "last": 668
+      },
+      "baseline": {
+        "min": 668,
+        "max": 24704,
+        "first": 668,
+        "last": 668
+      },
+      "first_diff_frame": null
+    },
+    "contorno": {
+      "mod": {
+        "min": 0,
+        "max": 2114,
+        "first": 2114,
+        "last": 2114
+      },
+      "baseline": {
+        "min": 0,
+        "max": 2114,
+        "first": 2114,
+        "last": 2114
+      },
+      "first_diff_frame": null
+    },
+    "hadouken": {
+      "mod": {
+        "min": 31710,
+        "max": 31710,
+        "first": 31710,
+        "last": 31710
+      },
+      "baseline": {
+        "min": 31710,
+        "max": 31710,
+        "first": 31710,
+        "last": 31710
+      },
+      "first_diff_frame": null
+    },
+    "rose": {
+      "mod": {
+        "min": 4104,
+        "max": 4104,
+        "first": 4104,
+        "last": 4104
+      },
+      "baseline": {
+        "min": 4104,
+        "max": 4104,
+        "first": 4104,
+        "last": 4104
+      },
+      "first_diff_frame": null
+    },
+    "x1": {
+      "mod": {
+        "min": 107,
+        "max": 334,
+        "first": 280,
+        "last": 107
+      },
+      "baseline": {
+        "min": 107,
+        "max": 334,
+        "first": 280,
+        "last": 107
+      },
+      "first_diff_frame": null
+    },
+    "hp1": {
+      "mod": {
+        "min": 108,
+        "max": 144,
+        "first": 144,
+        "last": 108
+      },
+      "baseline": {
+        "min": 108,
+        "max": 144,
+        "first": 144,
+        "last": 108
+      },
+      "first_diff_frame": null
+    },
+    "hp2": {
+      "mod": {
+        "min": 131,
+        "max": 144,
+        "first": 144,
+        "last": 131
+      },
+      "baseline": {
+        "min": 131,
+        "max": 144,
+        "first": 144,
+        "last": 131
+      },
+      "first_diff_frame": null
+    },
+    "esp1": {
+      "mod": {
+        "min": 0,
+        "max": 2114,
+        "first": 2114,
+        "last": 2114
+      },
+      "baseline": {
+        "min": 0,
+        "max": 2114,
+        "first": 2114,
+        "last": 2114
+      },
+      "first_diff_frame": null
+    },
+    "esp9": {
+      "mod": {
+        "min": 10504,
+        "max": 31296,
+        "first": 10504,
+        "last": 10504
+      },
+      "baseline": {
+        "min": 10504,
+        "max": 31296,
+        "first": 10504,
+        "last": 10504
+      },
+      "first_diff_frame": null
+    },
+    "esp14": {
+      "mod": {
+        "min": 10504,
+        "max": 30978,
+        "first": 10504,
+        "last": 10504
+      },
+      "baseline": {
+        "min": 13214,
+        "max": 30978,
+        "first": 13214,
+        "last": 13214
+      },
+      "first_diff_frame": 0
+    },
+    "esp15": {
+      "mod": {
+        "min": 4228,
+        "max": 24704,
+        "first": 4228,
+        "last": 4228
+      },
+      "baseline": {
+        "min": 668,
+        "max": 24704,
+        "first": 668,
+        "last": 668
+      },
+      "first_diff_frame": 0
+    }
+  }
+}

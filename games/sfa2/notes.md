@@ -84,6 +84,18 @@
 cor, a CGRAM mostra as cores velhas até a rotina `C0:3A8F` recarregar da ROM (primeira transição de
 ação ou ~70 frames). Medições de paleta usam `warmup` nos cenários (mod `sfa2-ken-gi-azul`: 40).
 
+## Vídeo, DMA e sprites medidos com o kit de pintura (2026-10-25, sessão 3)
+| fato | evidência |
+|---|---|
+| Display ligado só nas linhas ~24-215: IRQs em 21/24 (liga) e 215 (forced blank); o DMA acontece fora disso. No `endFrame` o OAM já é o do frame seguinte → snapshot do PPU no IRQ@215 (render × falsa cor = 100%) | experimento com eventos `irq`/`nmi`/`startFrame` + `fab sprite snap` (concordância 4520/4520) |
+| Buffer de paletas `7E:0500` (512 B) → CGRAM todo frame, disparado em `C0:0320` (`STA $420B`, m8,x16); sombra do OAM `7E:15C0` (544 B), disparo `C0:0305` | `fab ppu dma sfa2 --state luta-ken-rose-fight` |
+| Gráficos dos lutadores: DMA da ROM (`E0:`/`EF:`) para a VRAM `$7000`/`$7800` que chega DIFERENTE da ROM (S-DD1); uploads pequenos (`7E:19B8` → VRAM) vêm da WRAM | `fab ppu dma` (conferência VRAM × ROM) + `fab sprite tiles` (0/12 tiles crus) |
+| Na luta, todo upload comprimido sai de UM disparo: `C0:048C` (canal 0, `DMAP $09` = fonte fixa, m8,x8; 5 B `LDY $00 \| STA $420B` antes); cada fonte dá sempre o mesmo desenho; `E0:0427` (1600 B → VRAM `$E000`, a cada ~14 f) = Ken parado. O jogo escreve o DMAP **uma vez só**; `$4801` arma o canal | `fab gfx dump sfa2 --state luta-ken-rose-fight --frames 120` (`runs/20261025-200722-gfx-chip2`, sessão 4) |
+| Desenho do gi trocado SEM codec: `fab gfx override --expand --chip-disarm 00:4801=00` (ROM 5 MiB, tabela + cópia na página 4 pela janela `$F0-$FF`), 35 tiles, 0 colaterais; o 1.º teste quebrou o stream seguinte (`EF:3201`) até o hook devolver o DMAP | `fab gfx check` + print 50 (sessão 4) |
+| Retrato da seleção = BG (área B3), paleta CGRAM 6, ROM `0x1F4E60` (achado sozinho pelo report) | `fab sprite snap sfa2 --state selecao` (cursor no Ken) |
+| Luvas × cabelo (índices 14/15): rótulos por conteúdo em `games/sfa2/parts/ken-ouro.json` (300 frames, 99,7%); separabilidade **nível 4** — 15 tiles seguros, 22 ambíguos, 66 sprites com as duas peças (franja + topo do punho na guarda) | `fab sprite census … --engine` (`runs/…-census-sfa2-luva`) |
+| Motor de sprites por lista de cels declarado em `game.json → sprite_engine` (sonda `C0:5C8E`, Y = lista, DBR = banco) | sessão 2 + `fab sprite marks` |
+
 ## Hijacks usados por mods
 | endereço | bytes originais | mod | notas |
 |---|---|---|---|
