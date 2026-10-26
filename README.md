@@ -10,208 +10,172 @@
   <img src="https://img.shields.io/badge/plataforma-Windows%20x64-0078D6.svg" alt="Windows x64">
 </p>
 
-> **English summary** — An agent-driven factory for Super Nintendo (SNES) ROM hacks. Hand it a ROM and a
-> goal: it reverse-engineers the game (headless MesenCE emulation with Lua probes + Ghidra/ghidra-snes),
-> writes the 65816 patch with Asar and runs an **autonomous evolution loop** that replays a savestate on
-> the original and the modded ROM, records frames, video and RAM traces, scores objective checks and
-> decides whether the mod improved. Built for Claude Code (skills + CoALA memory + REA MCP), usable by any
-> coding agent through the `fab` CLI. Documentation is in Portuguese.
+> **English summary** — An agent-driven factory for Super Nintendo (SNES) ROM hacks. Hand it a ROM and a goal: it
+> reverse-engineers the game (headless MesenCE emulation with Lua probes + Ghidra/ghidra-snes), writes the 65816
+> patch with Asar and runs an **autonomous evolution loop** that replays a savestate on the original and the modded
+> ROM, records frames, video and RAM traces, scores objective checks and decides whether the mod improved. Sprite
+> recoloring and redrawing work from numbered images and text alone — including compressed graphics, without the
+> codec. Built for Claude Code (skills + CoALA memory), usable by any coding agent through the `fab` CLI.
+> Documentation is in Portuguese.
 
-Você passa a ROM e diz o que quer. O agente (Claude Code ou outro) registra a ROM, investiga o jogo
-no emulador e no Ghidra, escreve o patch em assembly 65816 (Asar) e entra num **ciclo autônomo**:
-roda o emulador headless a partir de um savestate, grava frames/vídeo/RAM do mod e da ROM original,
-compara, avalia critérios objetivos, olha as imagens e decide se houve evolução — até cumprir o objetivo.
+Você passa a ROM e diz o que quer. O agente registra a ROM, investiga o jogo no emulador e no Ghidra, escreve o patch
+em assembly 65816 (Asar) e entra num **ciclo autônomo**: roda o emulador headless a partir de um savestate, grava
+frames/vídeo/RAM do mod e da ROM original, compara, avalia critérios objetivos, olha as imagens e decide se houve
+evolução — até cumprir o objetivo.
 
 <p align="center">
   <img src="docs/img/pulo-duplo.gif" alt="ROM original à esquerda e, à direita, a mesma ROM com o patch de pulo duplo: o bloco sobe bem mais alto ao apertar B no ar" width="518">
 </p>
-
-<p align="center"><sub>Ciclo real da fábrica sobre a ROM de teste do repositório: mesmo savestate e mesmos inputs nas duas
-ROMs; à direita, o patch de pulo duplo do guia (B no chão e B de novo no ar).</sub></p>
+<p align="center"><sub>Ciclo real sobre a ROM de teste do repositório: mesmo savestate e mesmos inputs; à direita, o patch de pulo duplo.</sub></p>
 
 ## Como funciona
 
 ```
  ROM + pedido ──► fab rom add ──► savestate (fab state boot | fab play + import)
                                        │
-          ┌────────────── investigação ┴──────────────────────────┐
+          ┌──────────── investigação ──┴──────────────────────────┐
           │ dinâmico: MesenCE --testRunner + harness Lua          │
-          │   fab ram search/query · fab probe writes/reads/exec  │
-          │ estático: Ghidra 12.1.4 + ghidra-snes (headless)      │
-          │   fab re cdl → analyze → func/xrefs/decompile         │
+          │   fab ram · fab probe · fab ppu dma · fab sprite snap │
+          │ estático: Ghidra 12.1.4 + ghidra-snes (fab re)        │
           └──────────────── evidence_id ──────────────────────────┘
                                        │
-                   mods/<id>/patch.asm + mod.json (cenários + checks)
-                                       │
-        ┌──────────────── fab cycle run (snes-mod-cycle) ───────────────┐
-        │ Asar na cópia → baseline (ROM limpa) × mod, mesmo state/macro │
-        │ frames 256x224 · vídeo · traços de RAM · sondas M/X           │
-        │ compare.png · trace_compare.png · checks → pontuação          │
-        │ veredito automático + veredito visual do agente → ledger      │
-        └────────────── repete até objetivo-cumprido ───────────────────┘
+          mods/<id>/patch.asm + mod.json (cenários + checks)   ← à mão ou gerado:
+                                       │                         fab paint · fab gfx override
+        ┌──────────── fab cycle run (skill snes-mod-cycle) ─────────────┐
+        │ Asar numa cópia → base × mod, mesmo state/macro               │
+        │ frames · vídeo · traços de RAM · M/X · orçamento de VBlank    │
+        │ compare.png · checks → pontuação → veredito (auto + visual)   │
+        └──────────── repete até objetivo-cumprido ─────────────────────┘
                                        │
                         build/<id>/<id>.bps + relatório
 ```
 
-## Skills que este projeto usa (e recomenda)
+## Começo rápido
 
-Trabalhar pixel a pixel e achar "que peça desenha o quê" num sprite não é adivinhação. Duas skills
-externas são **recomendadas e usadas** aqui — instale-as por symlink (ver abaixo) para que qualquer
-agente as carregue em qualquer diretório:
-
-| skill | repositório | para quê neste projeto |
-|---|---|---|
-| **`pixel-peep`** | já vive em `.agents/pixel-peep/` | ler/editar pixel-art minúscula: mapa de índices ampliado, varinha mágica RGB, verificação ANTES×DEPOIS pixel-perfect com restauro. Regra de ouro (nasceu de um bug real): **trocar cor de sprite é trocar uma RAMPA, nunca um tom único** — preserve o realce e a sombra ou o objeto achata. |
-| **`grid-layout`** | <https://github.com/frederico-kluser/grid-layout> | **baixe e use**: é a disciplina que faltava para "que tile é a luva". Grelha rotulada + zoom com régua + **sondas determinísticas** + **partição exata** (cada píxel pertence a uma caixa, sem sobreposição nem buraco). O critério "um tile só entra na tabela se a caixa toca o punho e nunca toca o cabelo" saiu dalí — e destravou a cobertura de 2 para 14 tiles. Um componente = uma verificação. |
+Requisitos: Windows 10/11 x64, Python 3.12+, Git (e Node.js ≥ 22.19 só para o MCP do REA).
 
 ```bash
-# grid-layout (uma vez por máquina)
-git clone https://github.com/frederico-kluser/grid-layout.git ~/Agent-Skills/grid-layout
-# liga a skill a TODOS os roots de agentes da máquina (idempotente, com backup de links divergentes)
-SKILL_SRC=~/Agent-Skills/grid-layout/skills/grid-layout SKILL_NAME=grid-layout \
-  bash ~/.claude/skills/opensource-project/scripts/link-skill-global.sh
-```
-
-O que a `grid-layout` ajuda de facto (medido): a **metodologia** — nunca estimar a olho, grelha
-rotulada para orientação, partição exata para tomar decisões objetivas, verificação por componente.
-O que **não** ajuda: o motor dela (`gl.mjs`: HTML/CSS + Chromium + diff de screenshot) não tem alvo
-aqui — o alvo é VRAM/CGRAM, não DOM — e o fan-out por subagentes não compensa quando a análise é
-determinística e cada verificação custa uma run de emulador. Está documentado em
-`mods/sfa2-ken-azul-e-rosa/README.md` → "O que a skill `grid-layout` ajudou".
-
-## Regra de descoberta própria (não negociável)
-
-**Não se usam projetos de terceiros que já tragam a solução pronta** — descompressores, tabelas de
-streams, ferramentas de ROM-hacking, patches de outros. É roubar. Tudo o que entra num patch ou numa
-conclusão sai da **nossa** evidência: sondas do emulador (`fab probe`/`ram`), desmontagem e leitura
-direta da ROM (`fab disasm`, `fab re`), extração de píxeis pela própria tela (skill `pixel-peep`) e o
-que a RAM/VRAM mostra em execução. Ferramentas externas podem ser **citadas** como referência, mas
-nunca como fonte dos valores que vão para os patches. O que não se provar com `evidence_id` próprio
-não existe.
-
-## Instalação
-
-Requisitos: Windows 10/11 x64, Python 3.12+, Git e (opcional) Node.js ≥ 22.19 para o MCP do REA.
-
-```bash
-git clone https://github.com/frederico-kluser/snes-mods.git
-cd snes-mods
-./fab setup     # baixa e verifica (sha256) o toolchain pinado em tools/manifest.json (~1 GB)
+git clone https://github.com/frederico-kluser/snes-mods.git && cd snes-mods
+./fab setup     # baixa e confere (sha256) o toolchain pinado em tools/manifest.json (~1 GB)
 ./fab doctor    # tudo OK?
 ./fab selftest  # testes unitários + ponta a ponta no emulador headless
 ```
+No PowerShell use `.\fab.ps1`; no cmd, `fab.cmd`. O toolchain fica em `tools/` e as dependências numa `.venv` (fora do git).
 
-No PowerShell use `.\fab.ps1`; no cmd, `fab.cmd`. O toolchain fica em `tools/` (fora do git) e as
-dependências Python numa `.venv` local.
+Uso: abra o Claude Code na pasta e peça, por exemplo, *"Aqui está a ROM `D:\roms\MeuJogo.sfc`. Quero que o personagem
+pule mais alto"* ou *"deixa a roupa do personagem azul"*. Se tiver, passe um savestate `.mss` do Mesen/MesenCE no
+momento que interessa (senão o agente chega lá sozinho com `fab state boot`). Vídeos e prints vão em `media/inbox/`.
+O agente entrega o `.bps`, o `patch.asm` e o relatório dos ciclos. Comandos: `./fab --help` e
+[`cli.md`](.agents/snes-mod-factory/references/cli.md).
 
-## Como usar
+## Skills
 
-1. Abra o Claude Code na pasta do projeto.
-2. Peça, por exemplo: *"Aqui está a ROM `D:\roms\MeuJogo.sfc`. Quero que o personagem pule mais alto."*
-   - Se tiver, passe também um savestate do Mesen/MesenCE (`.mss`) no momento do jogo que interessa;
-     se não, o agente tenta chegar lá sozinho (`fab state boot`) ou pede para você salvar um com
-     `./fab play <jogo>` + **Shift+F1**.
-   - Vídeos ou prints que você gravar vão em `media/inbox/` (o agente roda `fab media inbox`).
-3. O agente segue as skills `snes-mod-factory` → `snes-mod-cycle` e entrega o `.bps`, o `patch.asm` e o
-   relatório dos ciclos (`cycles/<mod>/…/report.md`).
+| skill | para quê |
+|---|---|
+| `snes-mod-factory` | entrada de qualquer pedido: ROM → savestate → investigação → mod → entrega |
+| `snes-mod-cycle` | patch 65816 (evidência, M/X, hijack de 4 bytes, Asar, portões do build) + o ciclo de evolução |
+| `snes-sprite-paint` | cor, parte de sprite, desenho de tiles (crus ou comprimidos), tileset — só com imagens numeradas e texto |
+| `pixel-peep` | ler/conferir pixel-art: mapa de índices ampliado, varinha, verificação antes × depois pixel-perfect |
+| `rom-<jogo>` | diário de cada jogo analisado (fatos com evidência, states, estado dos mods, como continuar) — ex.: `rom-street-fighter-alpha` |
+| `snes-mods-coala-agent-skill` | memória e catálogo locais do projeto (CoALA) |
 
-Comandos à mão: `./fab --help`. Referência completa: [`.agents/snes-mod-factory/references/cli.md`](.agents/snes-mod-factory/references/cli.md).
+Recomendada (externa): [`grid-layout`](https://github.com/frederico-kluser/grid-layout) — a disciplina de grelha
+rotulada + partição exata + sondas determinísticas que separou luva × cabelo no SFA2 (o motor dela, HTML/Chromium,
+não tem alvo aqui; detalhes em [`mods/sfa2-ken-azul-e-rosa/README.md`](mods/sfa2-ken-azul-e-rosa/README.md)).
+
+## Regra de descoberta própria (não negociável)
+
+**Não se usam projetos de terceiros que já tragam a solução pronta** — descompressores, tabelas de streams,
+ferramentas de ROM-hacking, patches de outros. É roubar. Tudo o que entra num patch ou numa conclusão sai da
+**nossa** evidência: sondas do emulador (`fab probe`/`ram`), desmontagem e leitura direta da ROM (`fab disasm`,
+`fab re`), extração de píxeis pela própria tela (`fab sprite snap`, skill `pixel-peep`) e o que a RAM/VRAM mostra em
+execução. Ferramentas externas podem ser **citadas** como referência, mas nunca como fonte dos valores que vão para
+os patches. O que não se provar com `evidence_id` próprio não existe.
 
 ## Exemplo funcionando (sem ROM comercial)
 
-[`fixtures/testbed/testbed.asm`](fixtures/testbed/testbed.asm) é uma ROM homebrew (LoROM, 1 MB, código
-próprio) com um bloco que anda e pula — e a rotina de pulo fica **exatamente** nos endereços do guia
-(`$80:A41E–$80:A438`). [`mods/testbed-double-jump/patch.asm`](mods/testbed-double-jump/patch.asm) é o
-patch de "salto duplo" do guia, literal. Um ciclo:
+[`fixtures/testbed/testbed.asm`](fixtures/testbed/testbed.asm) é uma ROM homebrew (LoROM, 1 MB) com um bloco que anda
+e pula — a rotina de pulo fica **nos endereços do guia** (`$80:A41E–$80:A438`) — e gráficos crus e "comprimidos" (montados
+na WRAM) para treinar pintura e override. [`mods/testbed-double-jump/`](mods/testbed-double-jump/) é o patch de salto
+duplo do guia:
 
 ```
 ./fab cycle run mods/testbed-double-jump
 → 6/6 checks ✅ · hijack 80:A420 OK (JML $90:8008, 4 bytes, sem órfãos) · M/X dinâmico m8,x16 em 140/140
-→ pulo duplo: imagens divergem a partir do f40 (2º B no f39 + 1 frame de exibição)
-→ regressão (pulo simples): 0/35 frames divergentes
+→ pulo duplo: imagens divergem a partir do f40 · regressão (pulo simples): 0/35 frames divergentes
 ```
-
-<p align="center">
-  <img src="docs/img/ram-pulo-duplo.png" alt="Gráfico dos traços de RAM: posição Y, velocidade Y, flag de ar e flag de pulo duplo, mod em vermelho e original em cinza, com a linha de inputs" width="760">
-</p>
-
-As evidências de cada endereço usado no patch estão em
-[`mods/testbed-double-jump/README.md`](mods/testbed-double-jump/README.md).
+<p align="center"><img src="docs/img/ram-pulo-duplo.png" alt="Traços de RAM: posição Y, velocidade Y, flag de ar e de pulo duplo, mod em vermelho e original em cinza, com a linha de inputs" width="760"></p>
 
 ## O que tem aqui
 
 | caminho | o quê |
 |---|---|
-| `snesfab/` | a CLI `fab` (Python): ROM e mapas, emulação headless, mídia, comparação, critérios, build Asar + BPS, ciclo, lane do Ghidra, investigação dinâmica |
-| `lua/harness.lua` | roda dentro do MesenCE `--testRunner`: savestate, input, frames, RAM, sondas com M/X, CDL |
+| `snesfab/` | a CLI `fab` (Python): ROM e mapas, emulação headless, PPU/sprites/paletas/gráficos, build Asar + BPS, ciclo, Ghidra |
+| `lua/harness.lua` | roda dentro do MesenCE `--testRunner`: state, input, frames, RAM, sondas com M/X, CDL, PPU, falsa cor, log de DMA |
 | `ghidra_scripts/` | sementes M/X + análise, export TSV e descompilação (headless) |
-| `.agents/` | skills dos agentes (`snes-mod-factory`, `snes-mod-cycle`, `snes-rea-modder`) e a memória CoALA local |
-| `fixtures/testbed/` | a ROM homebrew de teste |
-| `tests/` | testes unitários e de ponta a ponta; `tests/fuzz/`: fuzzing (atheris) dos parsers de entrada não confiável |
-| `mods/`, `games/`, `cycles/` | mods, notas por jogo e o histórico dos ciclos (sem material comercial) |
-| `tools/manifest.json` | toolchain pinado com sha256 |
-
-## Toolchain (pinado em `tools/manifest.json`, instalado em `tools/`, fora do git)
+| `.agents/` | as skills acima (links em `.claude/skills/` e `.agents/skills/`) e a memória CoALA |
+| `fixtures/testbed/` · `tests/` | ROM homebrew de teste · testes unitários, ponta a ponta e fuzzing (`tests/fuzz/`) |
+| `mods/` · `games/` · `cycles/` | mods, notas por jogo e o histórico dos ciclos (sem material comercial) |
+| `tools/manifest.json` | toolchain pinado com sha256 (instalado em `tools/`, fora do git) |
 
 | ferramenta | versão | papel |
 |---|---|---|
-| MesenCE (sucessor do Mesen2) | 2.2.1 | emulador; `--testRunner` headless + Lua (state, input, frames, RAM, sondas, CDL) |
-| Asar | 1.91 | montador 65816 (`--fix-checksum=on --symbols=wla`, autoclean/freecode) |
-| Ghidra | 12.1.4 | análise estática headless |
-| ghidra-snes (joshleaves) | v1.3.0+2 (`d33ce5d`), recompilado | loader LoROM/HiROM/ExHiROM/SA-1 + língua `65816:LE:24:snes` |
-| Temurin JDK | 21.0.12.1 | Ghidra/gradle |
-| ffmpeg (gyan.dev) | 2026-10-22 | vídeo, extração de frames, cenas, movimento |
-| rea-agents (npm, em `tools/rea`) | 6.7.0 | servidor MCP do REA, registrado só neste projeto (`.mcp.json`) |
-| Python | 3.12+ com numpy, Pillow, matplotlib fixados com hash (`.venv`) | CLI `fab` |
+| MesenCE (sucessor do Mesen2) | 2.2.1 | emulador; `--testRunner` headless + Lua |
+| Asar | 1.91 | montador 65816 (`--fix-checksum=on --symbols=wla`) |
+| Ghidra + ghidra-snes (joshleaves, recompilado) | 12.1.4 · v1.3.0+2 | análise estática headless (LoROM/HiROM/ExHiROM/SA-1) |
+| Temurin JDK · ffmpeg (gyan.dev) | 21.0.12.1 · 2026-10-22 | Ghidra · vídeo e frames |
+| rea-agents (npm, `tools/rea`) | 6.7.0 | MCP do REA, só neste projeto (`.mcp.json`) |
+| Python | 3.12+ (numpy, Pillow, matplotlib com hash) | CLI `fab` |
 
-## Decisões e desvios em relação ao guia (verificados em 2026-10-24)
+## FAQ
 
-- **REA não abre ROMs de SNES na versão publicada (6.7.0).** `rea inspect rom.sfc` → `unsupported
-  binary format`; o modo raw só aceita `6502|x86|x86_64|arm|arm64|m68k`. O suporte a 65816 está no
-  PR morluto/rea#4911 (aberto; nele o Windows ainda recusa raw 65816 e não há mapeamento LoROM/HiROM).
-  Por isso o lane estático é o Ghidra + ghidra-snes chamado diretamente (`fab re`), com o **mesmo
-  contrato de evidência** do REA (`evidence_id`, `analysis_profile`, `normalized_result`,
-  `limitations`). O REA está instalado e registrado (MCP, 207 ferramentas, provedor Ghidra disponível)
-  para os outros alvos e para quando o 65816 entrar.
-- **Registro do REA só no projeto** (`.mcp.json` + skill copiada), não global.
-- **Mesen2 → MesenCE**: o repositório do Mesen2 foi arquivado em 2026-06; o MesenCE (nesdev-org) é a
-  continuação oficial. Configuração portátil em `tools/mesen/settings.json` (Lua I/O liberado, controle
-  SNES na porta 1, RAM inicial zerada, frame skipping desligado).
-- **ghidra-snes** só tem release para o Ghidra 12.0.4: é recompilado contra o 12.1.4 pelo `fab setup`.
-- **Sementes M/X do CDL**: o loader não segue os vetores; a análise é semeada com os vetores e com as
-  entradas de sub-rotina do Code/Data Log do MesenCE, que registra M/X por instrução executada.
-- **Ciclo**: o guia para no build; aqui o build é validado no emulador contra a ROM original, com
-  critérios, imagens e ledger append-only.
+**Preciso de qual ROM?** Uma que você possui (o `fab rom add` remove cabeçalho SMC e detecta o mapa/chip). Para
+testar sem ROM comercial: o testbed (`./fab testbed`).
 
-## Contribuindo
+**Por que MesenCE? Posso jogar o mod no snes9x/bsnes?** O ciclo precisa de emulação headless determinística com Lua
+(MesenCE); savestates só servem nele. O `.bps` final roda em qualquer emulador. Se o mod **expandir a ROM**, o
+`fab build` lista em `rom_expandida` quais emuladores a rodam (ex.: S-DD1 acima de 4 MiB: MesenCE/Mesen2 e bsnes;
+snes9x só abaixo de 8 MiB).
 
-Contribuições são bem-vindas! Leia o [CONTRIBUTING.md](CONTRIBUTING.md) (ambiente, branches
-`<tipo>/<slug>`, Conventional Commits, testes) e o [Código de Conduta](CODE_OF_CONDUCT.md). Dúvidas e
-ideias: [Discussions](https://github.com/frederico-kluser/snes-mods/discussions).
+**Dá para mudar o desenho de um sprite comprimido?** Sim, sem descompressor: `fab gfx dump` exporta o tileset pelo
+que chega na VRAM e `fab gfx override` serve o desenho editado no próprio DMA (validado no testbed e num jogo com S-DD1).
 
-## Segurança
+**E se a ROM não tiver espaço livre?** `expand_to` no `mod.json` ou `fab gfx override --expand`; o build cuida do
+cabeçalho e diz onde a ROM maior roda.
 
-Não reporte vulnerabilidades em issues públicas — veja o [SECURITY.md](SECURITY.md) (Private
-Vulnerability Reporting).
+**O agente pode errar endereço e corromper a ROM?** O `fab build` recusa sobrescrita não declarada, hijack sem M/X
+verificado, operando órfão e imediato com tamanho errado (aponta arquivo:linha) — e a ROM original nunca é tocada.
 
-## Versionamento
+**Por que meu mod com código não passa nos checks contra a ROM limpa?** Todo hook muda o timing e o RNG do jogo. A
+base de comparação passa a ser o próprio mod com a mudança desligada por valor (`baseline.variant`).
 
-[SemVer](https://semver.org/lang/pt-BR/) calculado a partir dos commits; o release-please mantém o PR de
-release e o [CHANGELOG.md](CHANGELOG.md).
+**Por que o REA não é usado na ROM?** O REA 6.7.0 não abre ROM de SNES (`unsupported binary format`; o 65816 está no
+PR morluto/rea#4911). O lane estático é o Ghidra + ghidra-snes via `fab re`, com o mesmo contrato de evidência.
 
-## Legal
+**Funciona com outro agente que não o Claude Code?** Sim: tudo é a CLI `fab` e as instruções estão em `AGENTS.md`
+(espelho do `CLAUDE.md`).
 
-Use apenas ROMs que você possui. Nada derivado de jogos comerciais é versionado (ROMs, states,
-builds, BPS, frames, vídeos, exports do Ghidra). Para compartilhar um mod, distribua `patch.asm` e/ou
-o `.bps`.
+**O que é versionado?** Código, skills, notas e mods (`patch.asm`, `mod.json`). Nunca ROMs, states, builds, BPS,
+frames, vídeos ou prints de jogos comerciais (`.gitignore` + `fab doctor`).
 
-## Licença e créditos
+## Decisões em relação ao guia (verificadas em 2026-10-24/25)
+- Mesen2 → **MesenCE** (o Mesen2 foi arquivado em 2026-06); config portátil em `tools/mesen/settings.json` (Lua I/O
+  liberado, RAM inicial zerada, frame skipping desligado).
+- ghidra-snes só tem release para o Ghidra 12.0.4: o `fab setup` recompila contra o 12.1.4. O loader não segue os
+  vetores: a análise é semeada com vetores + CDL do MesenCE (M/X reais).
+- O guia para no build; aqui o build é validado no emulador contra a ROM original, com critérios, imagens e ledger
+  append-only.
 
-Código deste repositório sob a licença [MIT](LICENSE). O `fab setup` baixa das fontes oficiais, sem
-redistribuir, ferramentas com licenças próprias: [MesenCE](https://github.com/nesdev-org/MesenCE)
-(GPL-3.0), [Ghidra](https://github.com/NationalSecurityAgency/ghidra) (Apache-2.0),
-[ghidra-snes](https://github.com/joshleaves/ghidra-snes) (MIT), [Asar](https://github.com/RPGHacker/asar)
-(LGPL-3.0/GPL-3.0/WTFPL), [ffmpeg](https://ffmpeg.org) (builds GPL da gyan.dev),
-[Eclipse Temurin](https://adoptium.net) (GPL-2.0 com Classpath Exception) e
-[REA](https://github.com/morluto/rea) (MIT). A memória CoALA (`.agents/snes-mods-coala-agent-skill`,
-motor `coala.py` incluído) vem da coala-agent-skill do mesmo autor, também sob MIT.
+## Contribuindo · Segurança · Versionamento
+Leia o [CONTRIBUTING.md](CONTRIBUTING.md) (ambiente, branches `<tipo>/<slug>`, Conventional Commits, testes) e o
+[Código de Conduta](CODE_OF_CONDUCT.md); ideias em [Discussions](https://github.com/frederico-kluser/snes-mods/discussions).
+Vulnerabilidades: [SECURITY.md](SECURITY.md) (Private Vulnerability Reporting), nunca em issue pública.
+[SemVer](https://semver.org/lang/pt-BR/) a partir dos commits; o release-please mantém o PR de release e o [CHANGELOG.md](CHANGELOG.md).
+
+## Legal, licença e créditos
+Use apenas ROMs que você possui; para compartilhar um mod, distribua `patch.asm` e/ou o `.bps`. Código sob a licença
+[MIT](LICENSE). O `fab setup` baixa das fontes oficiais, sem redistribuir: [MesenCE](https://github.com/nesdev-org/MesenCE)
+(GPL-3.0), [Ghidra](https://github.com/NationalSecurityAgency/ghidra) (Apache-2.0), [ghidra-snes](https://github.com/joshleaves/ghidra-snes)
+(MIT), [Asar](https://github.com/RPGHacker/asar) (LGPL-3.0/GPL-3.0/WTFPL), [ffmpeg](https://ffmpeg.org) (builds GPL da
+gyan.dev), [Eclipse Temurin](https://adoptium.net) (GPL-2.0 com Classpath Exception) e [REA](https://github.com/morluto/rea)
+(MIT). A memória CoALA (`.agents/snes-mods-coala-agent-skill`) vem da coala-agent-skill do mesmo autor, também MIT.

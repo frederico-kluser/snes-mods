@@ -1,111 +1,104 @@
 # snes-mods — fábrica de mods de Super Nintendo
 
-O usuário passa uma ROM e diz o que quer; o agente investiga (dinâmico no MesenCE headless +
-estático no Ghidra/ghidra-snes), escreve o patch Asar e itera num **ciclo autônomo** que roda o
-emulador a partir de um savestate, grava frames/vídeo/RAM do mod e da ROM original, compara e decide
-se houve evolução — até cumprir o objetivo.
+O usuário passa uma ROM e diz o que quer; o agente investiga (MesenCE headless + Ghidra/ghidra-snes), escreve o
+patch Asar e itera num **ciclo autônomo** (mod × base a partir de um savestate: frames, RAM, checks, veredito) até
+cumprir o objetivo. Tudo pela CLI `fab`: `./fab …` (Git Bash) · `.\fab.ps1 …` (PowerShell) · `fab.cmd …`.
 
 ## Comece por aqui
-- Qualquer pedido de mod/ROM/savestate/vídeo de jogo → skill **`snes-mod-factory`** (fluxo completo).
-- Jogo já analisado → a skill dele, **`rom-<jogo>`** (ex.: **`rom-street-fighter-alpha`**): carregue-a
-  antes de tudo e continue de onde ela parou.
-- Iterar até funcionar → skill **`snes-mod-cycle`** (argumento: `mods/<id>`).
-- Código 65816, M/X, hijacks, Asar → skill **`snes-rea-modder`** (protocolo do guia, corrigido).
-- Memória do projeto → skill **`snes-mods-coala-agent-skill`** (`recall` no início, `add` no fim).
-- CLI: `./fab …` (Git Bash) · `.\fab.ps1 …` (PowerShell) · `fab.cmd …`. `./fab doctor` antes de tudo.
-- Exemplo completo e funcionando: `mods/testbed-double-jump/` (o patch de pulo duplo do guia sobre a
-  ROM homebrew `fixtures/testbed/`, que coloca a rotina de pulo nos mesmos endereços do guia).
+| pedido | skill |
+|---|---|
+| qualquer ROM/mod/savestate/vídeo de jogo | **`snes-mod-factory`** (fluxo completo) |
+| jogo já analisado | **`rom-<jogo>`** antes de tudo (ex.: `rom-street-fighter-alpha`) |
+| código 65816, M/X, hijack, Asar, "roda o ciclo", "itera até funcionar" | **`snes-mod-cycle`** (argumento: `mods/<id>`) |
+| cor, roupa, parte de sprite, desenho de tile (cru ou comprimido), tileset | **`snes-sprite-paint`** |
+| conferir píxeis / pixel-art minúscula | **`pixel-peep`** |
+| memória do projeto | **`snes-mods-coala-agent-skill`** (`recall` no início, `add` no fim) |
+
+`./fab doctor --quick` antes de tudo. Exemplo completo: `mods/testbed-double-jump/` sobre a ROM homebrew `fixtures/testbed/`.
 
 ## Regras de ouro
 1. A ROM original e `roms/<id>/<id>.sfc` são só leitura; o Asar trabalha em cópias (`build/`).
-2. Nunca versionar ROMs, savestates, builds, BPS, frames/vídeos de jogos comerciais (`.gitignore`;
-   `fab doctor` verifica). Distribui-se `patch.asm` e/ou `.bps`.
-3. Evidência antes de patch: cada endereço do `.asm` tem `evidence_id` (`fab probe`, `fab ram`, `fab re`).
-   Observação ≠ inferência ≠ incógnita.
-4. M/X conferido dinamicamente (`fab probe exec`) antes de qualquer hijack; hijack = JML/JSL de 4 bytes
-   sobre instruções inteiras (NOP no que sobrar), instruções sobrescritas reproduzidas, retorno numa
-   fronteira de instrução. `fab build` verifica.
-5. Mod só está pronto com `fab cycle run` com todos os checks ✅, verificação visual das imagens e
-   `fab cycle verdict … objetivo-cumprido`; inclua sempre um cenário de regressão.
-6. REA 6.7.0 (MCP `rea`) **não abre ROMs de SNES** (verificado: `unsupported binary format`; raw só
-   6502/x86/arm/m68k). Lane estático de SNES = `fab re`. O REA fica para PE/ELF/JS/.NET/APK.
-7. Só chamar o usuário em bloqueio real (ROM ausente/corrompida, impossível chegar sozinho ao momento
-   do jogo, pedido ambíguo que muda o design). O resto: decidir e registrar.
+2. Nunca versionar ROMs, savestates, builds, BPS, frames/vídeos/prints de jogo comercial (`.gitignore`; `fab doctor`).
+3. Evidência antes de patch: cada endereço tem `evidence_id` (`fab probe`, `fab ram`, `fab re`). Observação ≠
+   inferência ≠ incógnita. Nada de solução de terceiros (descompressor, tabela, patch alheio): **regra de descoberta
+   própria** do README.
+4. M/X conferido dinamicamente (`fab probe exec`) antes de hijack; hijack = JML/JSL de 4 bytes sobre instruções
+   inteiras, sobras com NOP, instruções reproduzidas, retorno em fronteira; imediatos com `.b/.w`. O `fab build` recusa o resto.
+5. Mod pronto = `fab cycle run` com todos os checks ✅ + imagens conferidas + `fab cycle verdict … objetivo-cumprido`,
+   sempre com cenário de regressão. Mod com código: base variante (`baseline.variant`).
+6. Só chamar o usuário em bloqueio real (ROM ausente/corrompida, momento do jogo inalcançável, pedido ambíguo que muda
+   o design). O resto: decidir e registrar. Commit/push só quando o usuário pedir.
 
-## Uma agent skill por jogo (+ pasta de prints)
-Todo jogo analisado segue o padrão criado com o Street Fighter Alpha 2 (modelo e regras:
-`.agents/snes-mod-factory/references/skill-de-jogo.md`; exemplo vivo: `.agents/rom-street-fighter-alpha/`).
-1. **Skill do jogo `rom-<jogo>`** — criada logo depois do `fab rom add`, em `.agents/rom-<jogo>/SKILL.md`, com
-   links versionados em `.claude/skills/` e `.agents/skills/`. É o diário do jogo: identificação da ROM, como
-   chegar a cada momento (states + macros), fatos com `evidence_id`, estado de cada mod, **como continuar**,
-   perguntas em aberto e os avanços com data.
-2. **Aponta para a memória CoALA**: lista as chaves do jogo (`<id>-…`, `coala.py get <chave>`); os fatos
-   duráveis vão também para `coala.py add`, numa nota que cita o caminho da skill, e o `games/<id>/notes.md`
-   (ingerido pelo `sync`) abre apontando para ela. O motor não ingere `.agents/` nem `.claude/`
-   (`DEFAULT_EXCLUDES`): o elo é por essas notas, não por regra do `ingest.json`.
-3. **Pasta de prints `games/<id>/prints/`** — criada sempre que um jogo começa (ignorada pelo git: são frames
-   de jogo comercial; o `fab doctor` acusa se algo dali for versionado). Cada avanço ou teste ganha um print
-   numerado (`NN-descricao.png`) e uma linha no `LEIA-ME.txt` da pasta — é por ela que o usuário acompanha.
-4. **Ao parar** (pedido do usuário, fim de sessão ou bloqueio): reescreva Estado e Como continuar na skill do
-   jogo e registre o dia em Avanços — outra sessão tem de conseguir continuar só com ela.
+## Uma skill por jogo + pasta de prints
+Modelo: `.agents/snes-mod-factory/references/skill-de-jogo.md` (vivo: `.agents/rom-street-fighter-alpha/`).
+1. **`rom-<jogo>`** logo após o `fab rom add`, em `.agents/rom-<jogo>/SKILL.md` + links em `.claude/skills/` e
+   `.agents/skills/`: identificação, como chegar a cada momento, fatos com `evidence_id`, estado dos mods, **como
+   continuar**, perguntas em aberto, avanços com data.
+2. Fatos duráveis também em `coala.py add` (citando a skill); `games/<id>/notes.md` (ingerido pelo `sync`) abre
+   apontando para ela.
+3. **`games/<id>/prints/`** (ignorada pelo git): cada avanço ou teste = `NN-descricao.png` + linha no `LEIA-ME.txt`.
+4. **Ao parar**: reescreva Estado e Como continuar e registre o dia em Avanços.
 
 ## Mapa do repositório
 | caminho | o quê |
 |---|---|
-| `snesfab/` | pacote Python da CLI (`fab`): rom, emu, media, compare, checks, build, cycle, ghidra, investigate |
-| `lua/harness.lua` | roda dentro do MesenCE `--testRunner`: state, input, frames, RAM, sondas, CDL |
-| `ghidra_scripts/` | scripts headless: sementes M/X + análise, export TSV, descompilação |
-| `fixtures/testbed/` | ROM homebrew de teste (65816 próprio, LoROM 1 MB) |
-| `tests/` · `tests/fuzz/` | unittest (unitários + ponta a ponta) · alvos de fuzzing atheris (BPS, macro, critérios, ROM) + corpus; crash corrigido vira teste de regressão |
-| `mods/<id>/` | `mod.json` (cenários + checks), `patch.asm`, macros |
-| `games/<id>/` | `game.json`, `notes.md` (versionados) · `states/` e `prints/` (ignorados: savestates e os prints dos avanços) |
-| `.agents/<skill>/` | skills do projeto (fábrica, ciclo, 65816, CoALA) e uma `rom-<jogo>` por jogo; links em `.claude/skills/` e `.agents/skills/` |
-| `cycles/<id>/` | `ledger.jsonl` + `cycle-NNN/report.md` (imagens ignoradas pelo git) |
+| `snesfab/` | CLI `fab`: rom, emu, build, cycle, ppu/sprites/paint/gfx/gfxoverride, ghidra, investigate |
+| `lua/harness.lua` | MesenCE `--testRunner`: state, input, frames, RAM, sondas, CDL, PPU, falsa cor, DMA |
+| `ghidra_scripts/` · `fixtures/testbed/` | scripts headless do Ghidra · ROM homebrew de teste (LoROM 1 MB) |
+| `tests/` · `tests/fuzz/` | unittest (unitários + ponta a ponta) · fuzzing atheris; crash corrigido vira teste |
+| `mods/<id>/` | `mod.json` (cenários, checks, hijacks, data, blobs), `patch.asm`, gerados (`paint.asm`, `gfx_override.asm`) |
+| `games/<id>/` | `game.json`, `notes.md`, `parts/` (versionados) · `states/`, `prints/` (ignorados) |
+| `.agents/<skill>/` | skills do projeto e uma `rom-<jogo>` por jogo |
+| `cycles/<id>/` | `ledger.jsonl` + `cycle-NNN/report.md` (imagens ignoradas) |
 | `roms/ build/ runs/ work/ tools/` | ignorados: ROMs, builds, runs, projetos Ghidra, toolchain |
-| `tools/manifest.json` | toolchain pinado (JDK 21, Ghidra 12.1.4, MesenCE 2.2.1, Asar 1.91, ffmpeg) com sha256 |
-| `media/inbox/` | o usuário solta vídeos/imagens aqui → `fab media inbox` |
+| `media/inbox/` | vídeos/imagens do usuário → `fab media inbox` |
 
-## Detalhes técnicos que já custaram caro
-- **S-DD1** (SFA2, Star Ocean): só os 2 primeiros MiB ficam em LoROM fixa (`$00-$3F/$80-$BF:8000-FFFF`);
-  `$C0-$FF` são janelas HiROM de 1 MiB (`$4804-$4807`). O SFA2 roda em `$C0:xxxx` com DBR=`$BF` → sondas de
-  MMIO no banco `$BF`. Paletas não são comprimidas (mudar cor = patch de dados); os gráficos são.
-- MesenCE headless pula renderização em velocidade máxima → `Snes.DisableFrameSkipping=true` (o
-  `fab setup` garante). Sem isso as capturas ficam 1-5 frames atrasadas em relação à RAM.
-- Savestates só carregam/salvam dentro de callback de execução da CPU (o harness faz isso); states de
-  outros emuladores não servem. States não checam o hash da ROM: o state da ROM limpa roda no mod.
-- O loader do ghidra-snes não segue os vetores: a análise é semeada com vetores + CDL (M/X reais).
-- O Ghidra não cria referências para operandos direct page: `fab re xrefs` complementa com busca textual.
-- Asar `freecode` só usa bancos $10-$3F → ROM LoROM < 1 MB precisa de `"expand_to": "1MB"`.
+## Detalhes que já custaram caro
+- **Paleta de sprite = linha p+8 da CGRAM** (OAM 6 = CGRAM 14): `fab sprite snap` mede (render do OAM + falsa cor) e
+  acha a paleta na WRAM/ROM. Snapshot do PPU só com o display LIGADO (o harness cuida).
+- **Todo hook muda o timing e o RNG**: mod com código compara contra a base variante, nunca contra a ROM limpa. Código
+  no VBlank tem de caber nele (`fab paint check` mede a linha de cada DMA).
+- **S-DD1**: só os 2 primeiros MiB em LoROM fixa; `$C0-$FF` = janelas de 1 MiB (`$4804-$4807`); SFA2 roda em
+  `$C0:xxxx` com DBR=`$BF`. Gráfico comprimido muda sem codec com `fab gfx override` (`--expand`, `--chip-disarm`);
+  há jogo que escreve o DMAP uma vez só (o hook devolve). ROM expandida: o build diz em que emulador roda.
+- MesenCE headless: `Snes.DisableFrameSkipping=true` (o `fab setup` garante), senão as capturas atrasam 1-5 frames.
+  Savestates só carregam dentro de callback de execução (o harness cuida); state da ROM limpa roda no mod.
+- Asar: `freecode` só usa bancos $10-$3F (ROM < 1 MB → `expand_to`); imediato sem sufixo pode virar BRK; no S-DD1 o
+  `org` é o endereço do Asar, não o da CPU (os geradores e `fab addr --pc` resolvem).
+- REA 6.7.0 (MCP `rea`) **não abre ROM de SNES**: lane estático = `fab re` (Ghidra). O loader do ghidra-snes não
+  segue os vetores (sementes = vetores + CDL); o Ghidra não referencia operandos DP (`fab re xrefs` completa).
+- Testes: `./fab selftest` (usa a `.venv`); o Python do sistema não tem as dependências.
+
+## FAQ do agente
+- **Por onde começo um jogo novo?** `fab rom add` → skill `rom-<jogo>` + pasta de prints → state → investigação (snes-mod-factory).
+- **Como sei que terminei?** Checks ✅ + imagens + veredito `objetivo-cumprido` + regressão com 0 divergências; skill do jogo atualizada.
+- **A ferramenta imprimiu `proximo`.** Copie o comando; não calcule endereço à mão.
+- **Algo não é genérico?** Ferramenta nova vale para qualquer ROM; fato de um jogo vai para a skill `rom-<jogo>`.
 
 ## Governança open-source (contrato da skill `opensource-project`)
 
-Projeto público em `frederico-kluser/snes-mods`, governado pela skill **opensource-project**. Valem
-sempre, sem precisar invocar a skill (comandos em `~/.claude/skills/opensource-project/scripts/`):
+Projeto público em `frederico-kluser/snes-mods`. Vale sempre (scripts em `~/.claude/skills/opensource-project/scripts/`):
 
-1. **Reentry**: antes de qualquer tarefa de governança e antes de fechar o trabalho,
-   `bash ~/.claude/skills/opensource-project/scripts/oss-enforce.sh` (verifica e aplica o que falta:
+1. **Reentry**: antes de tarefa de governança e antes de fechar o trabalho, `oss-enforce.sh` (aplica o que falta:
    fundação, hooks locais, rulesets, push protection) e `oss-doctor.sh` sem `[FALTA]`.
-2. **`main` é cofre**: nunca push direto. Branch `<tipo>/<slug>` (`feat fix docs style refactor perf
-   test build ci revert hotfix release`) → PR com título Convencional → status check `build` verde →
-   **squash merge** → apagar a branch. O GitHub recusa o resto (rulesets em `.github/rulesets/`; o
-   projeto tem um mantenedor, então o PR exige 0 aprovações — suba quando houver revisores).
-3. **Commits Convencionais** (`tipo(escopo)!: descrição`, ≤ 72 caracteres) — validados pelo hook
-   `commit-msg` local e, no servidor, pelo job `build` do CI (título do PR = mensagem do squash).
-4. **Versão e changelog são gerados**: o release-please mantém o PR de release (SemVer pelos commits,
-   `CHANGELOG.md`, `__version__` em `snesfab/__init__.py`). Nunca editar à mão; tags `v*` imutáveis.
-5. **Workflows**: actions fixadas por SHA (`oss-pin-actions.sh`), `permissions` mínimas,
-   `timeout-minutes` em todo job; o `context` exigido pelo ruleset é o nome do job (`build`).
-6. **Zero segredos e zero material comercial** no código, no histórico e nos anexos
-   (`oss-gate.sh push --scan-only` antes de subir; `.gitignore` + `fab doctor` para ROMs/states).
-7. **Nunca contornar um gate** (`--no-verify`, force-push, reescrever histórico): corrigir a causa.
-   Erros no formato `Erro: <o quê> — Solução: <o que fazer>`.
+2. **`main` é cofre**: nunca push direto. Branch `<tipo>/<slug>` (`feat fix docs style refactor perf test build ci
+   revert hotfix release`) → PR com título Convencional → status check `build` verde → **squash merge** → apagar a
+   branch (rulesets em `.github/rulesets/`; 0 aprovações enquanto houver um mantenedor).
+3. **Commits Convencionais** (`tipo(escopo)!: descrição`, ≤ 72 caracteres): hook `commit-msg` local e job `build` do CI.
+4. **Versão e changelog gerados** pelo release-please (`CHANGELOG.md`, `__version__` em `snesfab/__init__.py`); nunca
+   à mão; tags `v*` imutáveis.
+5. **Workflows**: actions fixadas por SHA (`oss-pin-actions.sh`), `permissions` mínimas, `timeout-minutes` em todo
+   job; o `context` exigido pelo ruleset é o job `build`.
+6. **Zero segredos e zero material comercial** (`oss-gate.sh push --scan-only` antes de subir; `.gitignore` + `fab doctor`).
+7. **Nunca contornar um gate** (`--no-verify`, force-push, reescrever histórico): corrigir a causa. Erros no formato
+   `Erro: <o quê> — Solução: <o que fazer>`.
 
 | pedido | procedimento |
 |---|---|
 | "commita" | `oss-gate.sh commit-msg "<msg>"` → `git commit` |
 | "sobe/push" | branch `<tipo>/<slug>` → `oss-gate.sh push` → `git push -u origin <branch>` → `gh pr create --base main` |
 | "faz merge" | `gh pr checks --watch` → `gh pr merge --squash --delete-branch` |
-| "faz release" | squash merge do PR do release-please (cria tag `vX.Y.Z` + GitHub Release) |
+| "faz release" | squash merge do PR do release-please (tag `vX.Y.Z` + GitHub Release) |
 | "muda CI" | editar `.github/workflows/` → `oss-pin-actions.sh` → manter o job `build` |
 
 <!-- BEGIN:coala-memory (gerido por coala-agent-skill — não editar dentro do bloco) -->

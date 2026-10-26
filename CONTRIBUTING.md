@@ -75,7 +75,7 @@ python -m unittest discover -s tests -t .     # testes unitários (qualquer SO)
 - Funcionalidades que mexem no emulador/ciclo devem ser exercitadas com a ROM de teste
   (`fixtures/testbed/testbed.asm` + `mods/testbed-double-jump/`).
 - Se o comportamento mudar, atualize a documentação dos agentes: as skills em
-  `.agents/snes-mod-*`, `.agents/snes-rea-modder` e o `CLAUDE.md`/`AGENTS.md` (espelhados).
+  `.agents/` (`snes-mod-factory`, `snes-mod-cycle`, `snes-sprite-paint`, `pixel-peep`) e o `CLAUDE.md`/`AGENTS.md` (espelhados).
 - Workflows: actions fixadas por SHA, `permissions` mínimas e `timeout-minutes` em todo job.
 
 ### Fuzzing

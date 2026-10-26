@@ -63,7 +63,7 @@ uma vez, gere 256 watches `cN=cgram:<2N>:2` (é o que revelou a paleta do Ken no
 |---|---|
 | `fab mod new <id> --game <jogo> [--title] [--goal]` | cria `mods/<id>/` (mod.json, patch.asm, macro, README) |
 | `fab mod list` | mods |
-| `fab build mods/<id>` | cópia da base limpa (+`expand_to`) → Asar (`--fix-checksum=on --symbols=wla`) → regiões alteradas, verificação de hijack, labels, BPS |
+| `fab build mods/<id>` | cópia da base limpa (+`expand_to`, +`blobs[]`) → Asar (`--fix-checksum=on --symbols=wla`) → regiões, portões (sobrescrita não declarada, hijack/M/X, tamanho de imediato), labels, BPS; ROM que cresceu → `rom_expandida` (emuladores que a rodam) |
 | `fab cycle run mods/<id> [--note "hipótese"]` | build → baseline (cache) → mod → comparação visual/RAM → checks → pontuação → veredito automático → ledger + `report.md` |
 | `fab cycle verdict mods/<id> <evoluiu\|regrediu\|igual\|objetivo-cumprido\|inconclusivo> [--cycle N] --notes "…"` | veredito visual do agente (append-only) |
 | `fab cycle status mods/<id>` | histórico do ledger |
@@ -88,7 +88,39 @@ Botões: `A B X Y L R Start Select Up Down Left Right`.
 ```
 Dica: muitos jogos detectam "pressionou agora" por borda → separe dois toques com ≥1 frame sem o botão.
 
+## Pintura e mudança de sprites (qualquer jogo — guia passo a passo: skill `snes-sprite-paint`)
+| comando | o que faz |
+|---|---|
+| `fab gfx dump <jogo> [--state s]… [--macro …] [--frames 600] [--bpp 4]` | export do tileset: cada upload para a VRAM (já descomprimido, guardado em `run-N/vram_uploads.*`) + o que já estava na VRAM; tiles únicos em `tiles-NN.png` com a origem (cru na ROM / comprimido por chip / montado na WRAM / já estava) e `tileset.md` |
+| `fab gfx override mods/<id> --dump <dir> [--tiles 12,40-45 --map 14:9 --name … --evidence …] [--expand] [--data-at 0x… --data-evidence …] [--chip-disarm 00:4801=00]` | muda o DESENHO sem codec: cru → patch de dados; comprimido/WRAM → hook no disparo do DMA que serve a cópia editada (tabela + impressão digital), gera `gfx_override.asm` (+ blob) e `hijacks[]`/`data[]`/`blobs[]` |
+| `fab gfx check mods/<id> --dump <dir>` | roda os cenários do dump na ROM do mod: o desenho novo chegou na VRAM, o velho sumiu, 0 colaterais |
+| `fab ppu dma <jogo> [--state s] [--macro …] [--frames 60] [--mod id\|--rom …]` | log de cada DMA/HDMA: fonte (ROM/WRAM), destino (VRAM/OAM/CGRAM), instrução que dispara (PC + M/X) e se o gráfico é cru na ROM; `resumo` = buffer de paletas, sombra do OAM, origem dos gráficos |
+| `fab sprite snap <jogo> --state s [--frames 60\|30,60\|0-120:10] [--mod id]` | duas runs (real + **falsa cor**) com snapshot do PPU: `overview.png` (sprites numerados), `bg.png` (áreas de BG B1…), `objN/bgN-indices.png` (um painel por índice), `palettes.png`, `report.md` (cores + paleta achada na ROM/WRAM) |
+| `fab sprite report <captura> [--frame F]` | refaz as imagens de uma captura sem emular |
+| `fab sprite regions <captura> --object N --indices a,b [--store parts.json]` | regiões conexas desses índices, numeradas |
+| `fab sprite label <captura> --object N --indices a,b --regions 2,3 --part luva [--rest cabelo] --store …` | rótulo de peça por CONTEÚDO de tile (hash + píxel); `--pending <census> --items …` rotula pendentes |
+| `fab sprite census <jogo> --store … --target luva [--state/--macro/--frames] [--engine] [--capture dir]` | cobertura dos rótulos em muitos frames, folhas de pendentes (deduplicados), sprites misturados e **nível de separabilidade** (1-4) com o mecanismo |
+| `fab sprite tiles <captura> --object N [--indices] [--part --store]` | tiles do sprite ampliados e se estão CRUS na ROM |
+| `fab sprite marks <census --engine> --store … --target … --out marks.asm [--mod-json …] [--max-other-px N]` | marcas por cel (motores de lista de cels, `game.json → sprite_engine`) a partir dos rótulos |
+| `fab palette ramp <captura> (--object N\|--bg N\|--cgram-palette P [--box x,y,w,h]) --indices a-b (--to cor\|--colors …\|--copy-from PC:a-b)` | candidatas de rampa que preservam o sombreado (OKLab) + prévia exata; `proximo` traz o `fab paint set` pronto |
+| `fab palette find <jogo> --colors "$011E,$001B"` | onde uma sequência BGR555 está na ROM (PC, endereço de CPU e `org` do Asar) |
+| `fab paint set mods/<id> --pc 0x… --indices a-b --colors … --name … --evidence …` | grava no `paint.json` e gera `paint.asm` (org pelo mapa) + `data[]` |
+| `fab paint remap mods/<id> --capture … --object N --map 14:9,15:12 [--part --store] …` | troca índices DENTRO do desenho dos tiles do sprite (cru → dados; comprimido → `vram_tiles`, servido pelo `fab gfx override`) |
+| `fab paint oam-mirror mods/<id> --from-dma <run> (--tiles …\|--from-census …) --src-palette p --mirror-palette q --colors i:cor,…` | nível 2: hook antes do DMA do OAM + paleta-espelho por tabela de tiles (gera `oam_mirror.asm` e o hijack) |
+| `fab paint check mods/<id> [--state s] [--frames auto\|30,90] [--baseline-rom …]` | mod × base píxel a píxel (esperado/colateral/cor errada/faltou) + **orçamento de VBlank** (DMA que caiu com a imagem sendo desenhada) |
+| `fab probe exec <jogo> <Rótulo> --mod <id>` | sonda um rótulo do build ATUAL do mod (endereços mudam a cada build) |
+
+Campos do `mod.json` que as ferramentas preenchem: `hijacks[]` (`addr`, `m`, `x`, `evidence`, `source`, `verify` =
+rótulos extras cujo tamanho de instrução o build confere), `data[]` (regiões de dados com evidência, por `addr` ou
+`pc`), `blobs[]` (`pc` + arquivo binário gravado pelo build, ex.: tabela/cópias do override), `expand_to`.
+`"baseline": {"variant": {"name": "off", "defines": {"X_OFF": "1"}}}`: o `fab cycle run` usa como base o próprio mod
+montado com esses defines (mesmo código, só valores) — obrigatório para mod com código, porque qualquer hook muda o
+timing e o RNG do jogo; o relatório confere que a variante não muda opcode e mede a sincronia pela WRAM.
+
 ## Arquivos de uma run (`runs/<data>-<tipo>-<rótulo>/`)
 `job.json` (o que rodou) · `result.json` (status, frames, hits, sha1 da ROM) · `harness.log` ·
 `trace.csv` (frame, input, watches) · `probes.jsonl` · `frames/fNNNNN.png` (256x224) · `video.mp4`
-(2x, 60/every fps) · `sheet.png` · `wram.bin` (busca de RAM) · `cdl.bin`.
+(2x, 60/every fps) · `sheet.png` · `wram.bin` + `wram_index.csv` (dumps de WRAM) · `cdl.bin` ·
+`ppu.bin` + `ppu_index.jsonl` (snapshots OAM+CGRAM+VRAM com o display ligado) · `dma.jsonl` (log de DMA) ·
+`vram_uploads.bin` + `vram_uploads.jsonl` (o que cada DMA deixou na VRAM, com fonte, canal e M/X do disparo).
+Campos do job ligados a isso: `ppu_frames`/`ppu_every`, `false_color`, `capture.frames`, `wram_frames`, `dma_log`, `vram_uploads`.
