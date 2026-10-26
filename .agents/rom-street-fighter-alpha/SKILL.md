@@ -127,7 +127,8 @@ em 28 poses (bit 2 das flags). Medido mod × mod-desligado: 119/140 frames limpo
    com states/macros que mostrem as poses (`luta.txt`) → `fab gfx override mods/<id> --dump <dir> --expand
    --chip-disarm 00:4801=00` → `fab build` → `fab gfx check` → `fab paint check`. ⚠ O desenho é o mesmo em TODAS as
    roupas: a luva fica preta nas 6 cores (decisão do dono) — ou combine com o espelho só na cor 2.
-1. **Commit/PR das ferramentas e docs:** só a pedido do usuário (governança no `CLAUDE.md`).
+1. **Entrega no repositório:** tudo commitado no branch `feat/sfa2-roupa-ken` → PR #9 (CI verde em 2026-10-25);
+   falta o squash merge, só a pedido do usuário (governança no `CLAUDE.md`).
 2. **Outra cor de gi:** trocar as 5 constantes da cor (+ 4 do retrato) e `fab cycle run`.
 3. **Fora de escopo, só se pedido:** vitória/final do Ken, cores 4/5.
 
