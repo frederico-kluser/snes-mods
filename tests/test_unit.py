@@ -9,9 +9,10 @@ from pathlib import Path
 
 
 from snesfab import bps
+from snesfab.build import data_coverage, parse_data_regions
 from snesfab.checks import Evaluator, evaluate_checks, score
 from snesfab.disasm65816 import OPCODES, decode, disassemble, find_writer_before, instr_size
-from snesfab.emu import Watch, to_lua
+from snesfab.emu import Poke, Watch, job_from_scenario, to_lua
 from snesfab.ghidra import ghidra_addr
 from snesfab.macro import mask_of, parse_macro, total_frames
 from snesfab.paths import BUILD
@@ -56,6 +57,20 @@ class RomTests(unittest.TestCase):
         with self.assertRaises(FabError):
             snes_to_pc(0x408000, "sa1")      # BW-RAM, não ROM
 
+    def test_sdd1_mmc_padrao(self):
+        # S-DD1 (Star Ocean, SF Alpha 2): LoROM fixa só nos 2 primeiros MiB; $C0-$FF são janelas HiROM de 1 MiB.
+        # O SFA2 executa código em $C0:3A91 (= PC 0x3A91) e lê paletas em $DF:0260 (= PC 0x1F0260).
+        self.assertEqual(snes_to_pc(0xC03A91, "sdd1"), 0x003A91)
+        self.assertEqual(snes_to_pc(0xDF0260, "sdd1"), 0x1F0260)
+        self.assertEqual(snes_to_pc(0xBE8260, "sdd1"), 0x1F0260)
+        self.assertEqual(snes_to_pc(0x3E8260, "sdd1"), 0x1F0260)
+        self.assertEqual(snes_to_pc(0xE00000, "sdd1"), 0x200000)
+        self.assertEqual(snes_to_pc(0xFFFFFF, "sdd1"), 0x3FFFFF)
+        self.assertEqual(pc_to_snes(0x1F0260, "sdd1"), 0xBE8260)
+        self.assertEqual(pc_to_snes(0x200000, "sdd1"), 0xE00000)
+        with self.assertRaises(FabError):
+            snes_to_pc(0x408000, "sdd1")      # $40-$7D não mapeiam ROM no S-DD1
+
     def test_pc_to_snes_ida_e_volta(self):
         # achado pelo fuzzing (tests/fuzz/fuzz_rom.py): o endereço canônico tem de voltar ao mesmo byte
         limits = {"lorom": 0x400000, "sdd1": 0x400000, "sa1": 0x400000, "hirom": 0x400000, "exhirom": 0x800000}
@@ -97,6 +112,39 @@ class RomTests(unittest.TestCase):
             img2 = load_rom(p)
             self.assertTrue(img2.had_smc_header)
             self.assertEqual(img2.data, img.data)
+
+
+class DataRegionTests(unittest.TestCase):
+    """mod.json → "data" (regiões de dados com evidência): o build não as trata como hijack."""
+
+    def test_parse_e_cobertura(self):
+        regs = parse_data_regions([{"addr": "BE:8272", "length": 10, "evidence": "gi do Ken (ev-x)"},
+                                   {"addr": "BE:CE6A", "length": 8, "evidence": "retrato do Ken"}], "sdd1")
+        self.assertEqual([(r["start_pc"], r["end_pc"]) for r in regs],
+                         [(0x1F0272, 0x1F027C), (0x1F4E6A, 0x1F4E72)])
+        self.assertIs(data_coverage(regs, 0x1F0272, 0x1F027C), regs[0])     # exatamente a região
+        self.assertIs(data_coverage(regs, 0x1F0274, 0x1F0278), regs[0])     # dentro
+        self.assertIsNone(data_coverage(regs, 0x1F0270, 0x1F0276))          # começa antes
+        self.assertIsNone(data_coverage(regs, 0x1F0278, 0x1F0280))          # termina depois
+        self.assertIsNone(data_coverage(regs, 0x000100, 0x000200))          # longe
+        self.assertIsNone(data_coverage([], 0, 16))
+        # espelho LoROM/S-DD1 resolve para o mesmo byte
+        self.assertEqual(parse_data_regions([{"addr": "3E:8272", "length": 1, "evidence": "x"}], "sdd1")[0]["start_pc"],
+                         0x1F0272)
+
+    def test_data_invalido(self):
+        for bad in ({"addr": "BE:8272", "length": 10},                        # sem evidence
+                    {"addr": "BE:8272", "length": 10, "evidence": "   "},     # evidence vazia
+                    {"addr": "BE:8272", "length": 0, "evidence": "x"},        # comprimento zero
+                    {"addr": "BE:8272", "length": -4, "evidence": "x"},       # negativo
+                    {"addr": "BE:8272", "length": "abc", "evidence": "x"},    # não numérico
+                    {"length": 10, "evidence": "x"},                          # sem addr
+                    {"addr": "zz:1", "length": 10, "evidence": "x"},          # addr inválido
+                    "BE:8272"):                                               # não é objeto
+            with self.assertRaises(FabError, msg=repr(bad)):
+                parse_data_regions([bad], "sdd1")
+        self.assertEqual(parse_data_regions([], "lorom"), [])
+        self.assertEqual(parse_data_regions(None, "lorom"), [])
 
 
 class DisasmTests(unittest.TestCase):
@@ -160,6 +208,16 @@ class MacroTests(unittest.TestCase):
                 parse_macro(bad)
         self.assertEqual(len(parse_macro("1000x 1 B / 1 -")), 2000)
         self.assertEqual(parse_macro([[20, "B+Right"], [3], [1, 0x8000]]), [(20, 0x8100), (3, 0), (1, 0x8000)])
+
+
+class JobTests(unittest.TestCase):
+    def test_warmup_do_cenario(self):
+        # o state carrega RAM/CGRAM da ROM limpa: cenários de paleta medem só depois da recarga
+        sc = {"frames": 60, "warmup": 40, "input": "30;1 B", "watch": ["gi=cgram:01D2:2"], "capture": {"every": 4}}
+        job = job_from_scenario(sc, Path("."))
+        self.assertEqual((job.frames, job.warmup, job.capture_every), (60, 40, 4))
+        self.assertEqual(job.to_lua_table(Path("out"))["warmup"], 40)
+        self.assertEqual(job_from_scenario({"frames": 10, "input": "5"}, Path(".")).warmup, 0)
 
 
 class ChecksTests(unittest.TestCase):
@@ -267,6 +325,45 @@ class SerializationTests(unittest.TestCase):
         self.assertEqual((w.addr, w.size), (0x7E1DF9, 1))
         self.assertEqual(w.lua()["mem"], "snesWorkRam")
         self.assertEqual(w.lua()["offset"], 0x1DF9)
+
+    def test_watch_ppu(self):
+        # paletas/VRAM/OAM: offset em bytes na memória do PPU (cor 233 = bytes $1D2-$1D3 da CGRAM)
+        w = Watch.from_spec("gi=cgram:01D2:2")
+        self.assertEqual((w.space, w.addr, w.size), ("cgram", 0x1D2, 2))
+        self.assertEqual(w.lua()["mem"], "snesCgRam")
+        self.assertEqual(w.lua()["offset"], 0x1D2)
+        self.assertEqual(Watch.from_spec(w.to_dict()), w)          # o dicionário volta ao mesmo watch
+        self.assertEqual(Watch.from_spec("t=VRAM:$8000").lua()["mem"], "snesVideoRam")
+        self.assertEqual(Watch.from_spec("o=oam:0x21F").size, 1)
+        for bad in ("c=cgram:01FF:2", "c=cgram:0200", "o=oam:0220", "c=cgram:01:02:2"):
+            with self.assertRaises(FabError, msg=bad):
+                Watch.from_spec(bad)
+
+    def test_poke_specs(self):
+        p = Poke.from_spec("60:cgram:01D2:2=0x03E0")
+        self.assertEqual((p.frame, p.space, p.addr, p.size, p.value), (60, "cgram", 0x1D2, 2, 0x03E0))
+        self.assertEqual(p.lua(), {"frame": 60, "mem": "snesCgRam", "offset": 0x1D2, "value": 0x03E0, "size": 2})
+        p = Poke.from_spec("30:7E:06D2:2=0x1084")                  # WRAM: o offset é o da work RAM
+        self.assertEqual((p.frame, p.space, p.lua()["mem"], p.lua()["offset"]),
+                         (30, "", "snesWorkRam", 0x6D2))
+        p = Poke.from_spec("0:oam:0x21A=0x2F")                     # OAM, 1 byte, decimal
+        self.assertEqual((p.addr, p.size, p.value, p.lua()["mem"]), (0x21A, 1, 0x2F, "snesSpriteRam"))
+        # mod.json: os mesmos campos, com ou sem prefixo de espaço
+        self.assertEqual(Poke.from_spec({"frame": 5, "addr": "7E:06D2", "value": 1}).lua()["offset"], 0x6D2)
+        self.assertEqual(Poke.from_spec({"frame": 5, "addr": "cgram:0160:2", "value": 0, "size": 2}).space, "cgram")
+        for bad in ("60:cgram:01D2:2", "cgram:01D2=1", "60:cgram:01FF:2=1", "x:cgram:01D2=1"):
+            with self.assertRaises(FabError, msg=bad):
+                Poke.from_spec(bad)
+
+    def test_poke_expansao_por_frame(self):
+        # "*" = todos os frames medidos; "3-5" = intervalo; "7" = um frame
+        from snesfab.cli import _expand_pokes
+        self.assertEqual([p.frame for p in _expand_pokes(["*:cgram:01DC:2=0x7C1F"], 4)], [0, 1, 2, 3])
+        self.assertEqual([p.frame for p in _expand_pokes(["3-5:7E:06D2:2=1"], 10)], [3, 4, 5])
+        self.assertEqual([p.frame for p in _expand_pokes(["7:cgram:01DC:2=1"], 10)], [7])
+        self.assertTrue(all(p.size == 2 and p.space == "cgram" for p in _expand_pokes(["*:cgram:01DC:2=1"], 2)))
+        with self.assertRaises(FabError):
+            _expand_pokes(["semframe=1"], 3)
 
 
 if __name__ == "__main__":

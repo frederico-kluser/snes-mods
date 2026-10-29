@@ -85,7 +85,7 @@ Fontes em `ingest.json` (é teu: o instalador nunca o reescreve):
 
 - Saúde: `$COALA doctor` · panorama: `$COALA stats` · cópia: `$COALA backup` · todos os comandos: `$COALA --help`
 - Atualizar esta skill e o motor: `python3 ~/Agent-Skills/coala-agent-skill/scripts/coala-install.py install --project <raiz-do-projeto>`
-- Política git: `ignore` — `memory/` fica fora do git (base binária e local, pode conter detalhes de infra); versiona-se a skill (SKILL.md, scripts/, references/, ingest.json, coala.json).
+- Política git: `track-dump` — a base binária fica fora do git; versiona-se `memory/coala.canonical.jsonl` (atualiza com `$COALA export --format jsonl --out .agents/snes-mods-coala-agent-skill/memory/coala.canonical.jsonl`).
 - Erros: `Erro: <o quê> — Solução: <o que fazer>` em stderr · exit `0` ok · `1` operacional · `2` uso · `3` instalação em falta.
 
 ## Referências locais

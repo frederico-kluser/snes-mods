@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 
 from . import HARNESS_VERSION
-from .build import build_mod
+from .build import build_mod, variant_safety
 from .checks import evaluate_checks, score
 from .compare import compare_runs
 from .emu import Probe, job_from_scenario, read_probes, read_trace, run_job
@@ -73,6 +73,29 @@ def _mx_from_probes(probes: list[dict], sites: list[str]) -> dict:
     return out
 
 
+def _wram_sync(base_dir: Path, mod_dir: Path, limit: int = 1024) -> dict:
+    """Sincronia mod × variante: quantos bytes da WRAM diferem nos frames amostrados. Em sincronia só diferem
+    buffers de paleta (dezenas de bytes); com o timing descolado, centenas/milhares (lógica do jogo)."""
+    from .emu import read_wram
+    a, b = read_wram(base_dir), read_wram(mod_dir)
+    rows = []
+    for f in sorted(set(a) & set(b)):
+        x, y = a[f], b[f]
+        diff = [i for i in range(min(len(x), len(y))) if x[i] != y[i]]
+        spans = []
+        for i in diff:
+            if spans and i - spans[-1][1] <= 16:
+                spans[-1][1] = i
+            else:
+                spans.append([i, i])
+        rows.append({"frame": f, "bytes": len(diff),
+                     "faixas": [f"7E:{s:04X}-{e:04X}" if e < 0x10000 else f"7F:{s - 0x10000:04X}-{e - 0x10000:04X}"
+                                for s, e in spans[:8]]})
+    ok = bool(rows) and all(r["bytes"] <= limit for r in rows)
+    return {"ok": ok, "frames": rows, "limite": limit,
+            "leitura": "em sincronia (só buffers mudam)" if ok else "FORA de sincronia: a variante não serve de base"}
+
+
 def run_cycle(mod_ref: str | Path, note: str = "") -> dict:
     mod = load_mod(mod_ref)
     mod_dir = Path(mod["_dir"])
@@ -100,13 +123,34 @@ def run_cycle(mod_ref: str | Path, note: str = "") -> dict:
     built_rom = ROOT / build["rom"]
     sites = [h["addr"] for h in build.get("hijacks", [])]
     hijack_probes = [Probe("exec", parse_addr(s), max_hits=300, label=f"hijack {s}") for s in sites]
-    clean = clean_rom(game)
+    base_rom, base_sha = clean_rom(game), g["hashes"]["clean_sha256"]
+    variant_cfg = (mod.get("baseline") or {}).get("variant")
+    if variant_cfg:
+        # mod com CÓDIGO: a base é o mesmo patch com a pintura desligada por VALORES (mesmo timing, mesmo RNG).
+        # Contra a ROM limpa a luta descola no frame 1 e os checks alinhados nunca passam.
+        try:
+            var = build_mod(mod_dir, variant={"name": variant_cfg.get("name", "off"),
+                                              "defines": variant_cfg.get("defines", {})})
+        except FabError as e:
+            record.update({"status": "build_failed", "error": f"variante da base: {e.what}", "score": 0.0,
+                           "verdict_auto": "falhou"})
+            append_jsonl(ledger_path, record)
+            _write_report(cyc_dir, record, mod, [], build)
+            return record
+        safety = variant_safety(build, var)
+        record["baseline"] = {"kind": "variante", "rom": var["rom"], "defines": variant_cfg.get("defines", {}),
+                              "safety": safety}
+        base_rom, base_sha = ROOT / var["rom"], var["sha256"]
     scen_reports = []
     for sc in mod["scenarios"]:
         sc_res = _resolve_state(game, sc, mod_dir)
         sc_id = sc["id"]
+        if variant_cfg:
+            n_fr = int(sc_res.get("frames") or 0) or 60
+            w0 = int(sc_res.get("warmup", 0))
+            sc_res["wram_frames"] = sorted({w0, (w0 + n_fr) // 2, max(w0, n_fr - 1)})
         probe_dicts = [{"kind": p.kind, "addr": p.addr} for p in hijack_probes]
-        key = _scenario_key(g["hashes"]["clean_sha256"], {**sc_res, "_macro": _macro_digest(sc, mod_dir)}, probe_dicts)
+        key = _scenario_key(base_sha, {**sc_res, "_macro": _macro_digest(sc, mod_dir)}, probe_dicts)
         base_dir = RUNS / "baselines" / game / f"{slugify(sc_id)}-{key}"
         if (base_dir / "result.json").exists() and read_json(base_dir / "result.json").get("status") == "ok":
             base = {"run_dir": base_dir, "trace": read_trace(base_dir), "probes": read_probes(base_dir), "cached": True}
@@ -115,7 +159,8 @@ def run_cycle(mod_ref: str | Path, note: str = "") -> dict:
                 import shutil
                 shutil.rmtree(base_dir, ignore_errors=True)
             base_dir.mkdir(parents=True)
-            base = run_scenario(clean, sc_res, mod_dir, game, base_dir, f"{game} · {sc_id} · BASELINE", hijack_probes)
+            base = run_scenario(base_rom, sc_res, mod_dir, game, base_dir,
+                                f"{game} · {sc_id} · BASELINE" + (" (variante)" if variant_cfg else ""), hijack_probes)
             base["cached"] = False
         mod_run_dir = RUNS / "cycles" / mid / f"cycle-{n:03d}-{slugify(sc_id)}"
         if mod_run_dir.exists():
@@ -127,7 +172,9 @@ def run_cycle(mod_ref: str | Path, note: str = "") -> dict:
                            base_trace=base["trace"], mod_trace=modrun["trace"])
         checks = evaluate_checks(sc.get("checks", []), modrun["trace"], base["trace"])
         mx = _mx_from_probes(base["probes"], sites) if sites else {}
+        sync = _wram_sync(base["run_dir"], mod_run_dir) if variant_cfg else None
         scen_reports.append({
+            "sync": sync,
             "id": sc_id,
             "state": rel(Path(sc_res["state"])) if sc_res.get("state") else None,
             "baseline_run": rel(base["run_dir"]), "baseline_cached": base.get("cached", False),
@@ -159,7 +206,9 @@ def run_cycle(mod_ref: str | Path, note: str = "") -> dict:
         "goal_met_by_checks": count > 0 and passed == count,
         "visual_change": any((s["compare"].get("frames_divergent") or 0) > 0 for s in scen_reports),
         "build": {"rom": build["rom"], "sha256": build["sha256"][:16], "warnings": build["warnings"],
-                  "hijacks_ok": all(h["ok"] for h in build.get("hijacks", [])), "bps": build.get("bps")},
+                  "hijacks_ok": all(h["ok"] for h in build.get("hijacks", [])),
+                  "data_ok": all(d.get("ok", True) for d in build.get("data", [])),
+                  "data_regions": len(build.get("data", [])), "bps": build.get("bps")},
         "report": rel(cyc_dir / "report.md"),
     })
     append_jsonl(ledger_path, record)
@@ -210,20 +259,42 @@ def _write_report(cyc_dir: Path, rec: dict, mod: dict, scens: list[dict], build:
     if build:
         L += ["", "## Build", f"- ROM: `{build['rom']}` · BPS: `{build.get('bps')}` ({build.get('bps_size')} bytes)",
               f"- avisos do Asar: {len(build['warnings'])}" + (" ⚠ freespace_leaked" if build.get("leak_warning") else "")]
+        cc = build.get("code_check") or {}
+        if cc.get("instructions_checked"):
+            L.append(f"- tamanho das instruções × M/X: {cc['instructions_checked']} conferidas, "
+                     f"{len(cc.get('issues', []))} problema(s)")
+    bl = rec.get("baseline")
+    if bl:
+        sf = bl["safety"]
+        L += ["", "## Base A/B (variante do próprio mod)",
+              f"- ROM da base: `{bl['rom']}` · defines: `{bl['defines']}`",
+              f"- variante muda só valores? {'✅ sim' if sf['ok'] else '❌ NÃO'} ({sf['bytes_diferentes']} bytes diferentes)"
+              + ("" if sf["ok"] else " — " + "; ".join(sf["issues"])),
+              "- por que: mod com código desloca o timing/RNG; contra a ROM limpa a cena descola e os checks alinhados "
+              "não valem. A variante tem o MESMO código: só a cor muda."]
         for h in build.get("hijacks", []):
             L.append(f"- hijack {h['addr']} ({h['length']} B, {h['assumed_flags']}, {h['flags_source']}): "
                      f"{'OK' if h['ok'] else 'PROBLEMA'} {'; '.join(h['issues'])}")
             L.append("  - original: " + " | ".join(x.split('  ', 1)[-1].strip() for x in h['original'][:3]))
             L.append("  - patch:    " + " | ".join(x.split('  ', 1)[-1].strip() for x in h['patched'][:2]))
         for r in build.get("regions", []):
+            if r.get("kind") == "data":
+                L.append(f"- dados {r['start']}–{r['end']} ({r['length']} B, declarado em 'data[]'): {r['evidence']}")
             if r.get("rats"):
                 L.append(f"- freespace {r['start']}–{r['end']} (RATS {r['rats']['size']} B, código em {r['rats']['code_start']})")
+        for d in build.get("data", []):
+            if not d.get("ok"):
+                L.append(f"- ⚠ dados {d['addr']} ({d['length']} B): {d.get('issue', '')}")
     for s in scens:
         c = s["compare"]
         L += ["", f"## Cenário `{s['id']}` — pontuação {s['score']}",
               f"- state: `{s['state']}` · baseline: `{s['baseline_run']}`{' (cache)' if s['baseline_cached'] else ''} · mod: `{s['mod_run']}`",
               f"- divergência visual: {c.get('frames_divergent', '?')}/{c.get('frames_compared', '?')} frames "
               f"(primeira f{c.get('first_divergence_frame')}, pico {c.get('max_changed_pct')}% em f{c.get('max_changed_frame')})"]
+        if s.get("sync"):
+            sy = s["sync"]
+            L.append(f"- sincronia mod × variante (WRAM): {'✅' if sy['ok'] else '❌'} {sy['leitura']} — "
+                     + ", ".join(f"f{r['frame']}: {r['bytes']} B" for r in sy["frames"]))
         for site, mx in (s.get("hijack_mx_dynamic") or {}).items():
             L.append(f"- M/X dinâmico no hijack {site} (baseline): {mx['executions']} execuções, {mx['flags']}"
                      + ("" if mx["executions"] else " — ⚠ o cenário não passa pelo hijack"))

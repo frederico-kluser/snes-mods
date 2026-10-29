@@ -213,7 +213,16 @@ def snes_to_pc(addr: int, mapping: str, rom_size: int | None = None) -> int:
             pc = (0x200000 if bank >= 0x80 else 0) | ((bank & 0x3F) << 15) | (off - 0x8000)
         else:
             raise FabError(f"{fmt_addr(addr)} não mapeia ROM em SA-1")
-    elif mapping in ("lorom", "sdd1"):
+    elif mapping == "sdd1":
+        # MMC padrão do S-DD1 ($4804-$4807 = 0/1/2/3): $00-$3F/$80-$BF:8000-FFFF são LoROM FIXA dos 2 primeiros
+        # MiB; $C0-$FF são janelas HiROM de 1 MiB (C/D/E/F = blocos 0/1/2/3); $40-$7D não mapeiam ROM.
+        if bank >= 0xC0:
+            pc = ((bank - 0xC0) << 16) | off
+        elif off >= 0x8000 and (bank <= 0x3F or 0x80 <= bank <= 0xBF):
+            pc = ((bank & 0x3F) << 15) | (off - 0x8000)
+        else:
+            raise FabError(f"{fmt_addr(addr)} não mapeia ROM em S-DD1")
+    elif mapping == "lorom":
         if off >= 0x8000:
             pc = ((bank & 0x7F) << 15) | (off - 0x8000)
         elif 0x40 <= (bank & 0x7F) <= 0x7D and rom_size and rom_size > 0x200000:
@@ -245,7 +254,8 @@ def snes_to_pc(addr: int, mapping: str, rom_size: int | None = None) -> int:
 
 def pc_to_snes(pc: int, mapping: str, fast: bool = True) -> int:
     """Offset no arquivo → endereço de CPU canônico (FastROM $80+ para LoROM, $C0+ para HiROM; SA-1 como o
-    Asar: $00-$3F para os 2 primeiros MiB, $80-$BF para os 2 seguintes). Fora do que o mapa cobre: FabError."""
+    Asar: $00-$3F para os 2 primeiros MiB, $80-$BF para os 2 seguintes; S-DD1: LoROM $80-$BF para os 2
+    primeiros MiB, janelas HiROM $E0-$FF para os 2 seguintes). Fora do que o mapa cobre: FabError."""
     if mapping not in ("lorom", "sa1", "sdd1", "hirom", "exhirom"):
         raise FabError(f"mapa desconhecido: {mapping}")
     limit = 0x800000 if mapping == "exhirom" else 0x400000
@@ -254,6 +264,8 @@ def pc_to_snes(pc: int, mapping: str, fast: bool = True) -> int:
     if mapping == "sa1":
         bank = (0x80 if pc >= 0x200000 else 0) | ((pc >> 15) & 0x3F)
         return (bank << 16) | 0x8000 | (pc & 0x7FFF)
+    if mapping == "sdd1" and pc >= 0x200000:
+        return ((0xC0 | (pc >> 16)) << 16) | (pc & 0xFFFF)
     if mapping in ("lorom", "sdd1"):
         bank = (pc >> 15) & 0x7F
         return ((bank | (0x80 if fast else 0)) << 16) | (0x8000 + (pc & 0x7FFF))
@@ -265,6 +277,84 @@ def pc_to_snes(pc: int, mapping: str, fast: bool = True) -> int:
             raise FabError(f"0x{pc:X} não tem endereço de CPU em ExHiROM (metade baixa de $3E-$3F)")
         bank &= 0x3F
     return (bank << 16) | (pc & 0xFFFF)
+
+
+def asar_org(pc: int, mapping: str) -> int:
+    """Offset no arquivo → endereço para `org` no Asar com a diretiva do mapa (`lorom`, `hirom`, `sa1rom`,
+    `exhirom`). ⚠ No S-DD1 o Asar usa `lorom` (bancos $80-$FF:8000-FFFF cobrem os 4 MiB), mas a CPU vê os
+    2 MiB de cima pelas janelas HiROM ($E0-$FF): o MESMO byte tem dois endereços. `org` usa ESTE; as sondas
+    e o `data[]` do mod.json usam o da CPU (ou `pc`)."""
+    if pc < 0:
+        raise FabError(f"offset negativo: {pc}")
+    if mapping in ("lorom", "sdd1"):
+        if pc >= 0x400000:
+            raise FabError(f"0x{pc:X} passa dos 4 MiB que o Asar endereça em lorom")
+        return ((0x80 | (pc >> 15)) << 16) | 0x8000 | (pc & 0x7FFF)
+    if mapping == "sa1":
+        return pc_to_snes(pc, "sa1")
+    if mapping == "hirom":
+        if pc >= 0x400000:
+            raise FabError(f"0x{pc:X} passa dos 4 MiB de HiROM")
+        return ((0xC0 | (pc >> 16)) << 16) | (pc & 0xFFFF)
+    if mapping == "exhirom":
+        return pc_to_snes(pc, "exhirom")
+    raise FabError(f"mapa desconhecido: {mapping}")
+
+
+ASAR_DIRECTIVE = {"lorom": "lorom", "sdd1": "lorom", "sa1": "sa1rom", "hirom": "hirom", "exhirom": "exhirom"}
+
+# S-DD1 acima de 4 MiB: a CPU só enxerga a ROM pelas janelas de 1 MiB $C0-$FF ($4804-$4807, reset = 0/1/2/3).
+# O fab usa a janela $F0-$FF ($4807) para ler o que mora na área expandida.
+SDD1_WINDOW = {"reg": 0x004807, "bank": 0xF0, "reset": 3}
+
+
+def cpu_view(pc: int, mapping: str) -> tuple[int, dict | None]:
+    """Endereço que a CPU usa para ler o offset `pc` e, se ele só aparece trocando a janela de um chip, a troca
+    ({reg, page, restore}). S-DD1 acima de 4 MiB: janela $F0-$FF na página pc >> 20 (o chip lê 1 MiB por página)."""
+    if mapping == "sdd1" and pc >= 0x400000:
+        if pc >= 0x800000:
+            raise FabError(f"0x{pc:X} passa dos 8 MiB que o fab expande no S-DD1")
+        w = SDD1_WINDOW
+        return ((w["bank"] | ((pc >> 16) & 0x0F)) << 16) | (pc & 0xFFFF), {"reg": w["reg"], "page": pc >> 20,
+                                                                            "restore": w["reset"]}
+    return pc_to_snes(pc, mapping), None
+
+
+def addr_or_pc(pc: int, mapping: str) -> str:
+    """Endereço de CPU canônico do offset, ou `PC 0x…` quando o mapa não tem um fixo (ex.: S-DD1 acima de 4 MiB)."""
+    try:
+        return fmt_addr(pc_to_snes(pc, mapping))
+    except FabError:
+        return f"PC 0x{pc:06X}"
+
+
+def expansion_notes(mapping: str, old: int, new: int) -> dict | None:
+    """Quem roda a ROM expandida. Pesquisa de 2026-10-25 no código-fonte dos emuladores (fontes em
+    `.agents/snes-mod-factory/references/snes-ref.md`); o fab emula tudo no MesenCE."""
+    if new <= old:
+        return None
+    size = f"{new / (1 << 20):g} MiB"
+    if mapping == "sdd1" and new > 0x400000:
+        emus = [
+            {"emulador": "MesenCE 2.2.1 / Mesen2", "situacao": "verificado (o fab roda nele)",
+             "detalhe": "página = registro & $0F (até 16 MiB); tamanho fora de potência de 2 é espelhado"},
+            {"emulador": "bsnes / higan", "situacao": "pelo código-fonte",
+             "detalhe": "registro & $8F, página & $0F (até 16 MiB)"},
+            {"emulador": "snes9x", "situacao": "pelo código-fonte, só ABAIXO de 8 MiB",
+             "detalhe": "página = valor & 7; S-DD1 com 8 MiB ou mais vira 'conversão descomprimida' e quebra"},
+            {"emulador": "FXPak Pro (console)", "situacao": "não testado",
+             "detalhe": "firmware 1.11.1 reconhece S-DD1 acima de 48 Mbit; há relatos antigos de travamento em jogos S-DD1"}]
+        rec = "MesenCE/Mesen2 ou bsnes" + ("; snes9x NÃO (8 MiB ou mais)" if new >= 0x800000 else "; snes9x também")
+        return {"tamanho": size, "mapa": mapping, "emuladores": emus, "recomendado": rec,
+                "por_que": "S-DD1 acima de 4 MiB: o hook troca a janela $F0-$FF ($4807) para ler a área nova"}
+    if new <= 0x400000:
+        return {"tamanho": size, "mapa": mapping, "recomendado": "qualquer emulador ou flashcart",
+                "por_que": "dentro do tamanho padrão do mapa"}
+    if mapping == "exhirom":
+        return {"tamanho": size, "mapa": mapping, "recomendado": "bsnes, snes9x, Mesen e flashcarts atuais",
+                "por_que": "ExHiROM (até 8 MiB) é um mapa conhecido"}
+    return {"tamanho": size, "mapa": mapping, "recomendado": "teste no MesenCE antes de distribuir",
+            "por_que": "acima do tamanho padrão do mapa"}
 
 
 @dataclass

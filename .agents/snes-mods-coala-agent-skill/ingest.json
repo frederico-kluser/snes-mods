@@ -26,6 +26,18 @@
       "tags": "docs,regras"
     },
     {
+      "name": "docs",
+      "include": [
+        "docs/*.md",
+        "CONTRIBUTING.md",
+        "THIRD_PARTY_NOTICES.md"
+      ],
+      "mode": "markdown",
+      "type": "semantic",
+      "origin": "agent",
+      "tags": "docs,{stem}"
+    },
+    {
       "name": "jogos",
       "include": [
         "games/*/notes.md"
