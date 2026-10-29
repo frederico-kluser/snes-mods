@@ -93,22 +93,40 @@ def to_lua(obj) -> str:
     raise TypeError(f"não serializável para Lua: {type(obj)}")
 
 
+# memória do PPU lida direto pelo harness: o "endereço" é um offset em bytes dentro dela, não um endereço de CPU
+PPU_SPACES = {"cgram": ("snesCgRam", 0x200), "vram": ("snesVideoRam", 0x10000), "oam": ("snesSpriteRam", 0x220)}
+
+
+def _split_space(text: str) -> tuple[str, str]:
+    head, sep, tail = str(text).strip().partition(":")
+    if sep and head.strip().lower() in PPU_SPACES:
+        return head.strip().lower(), tail
+    return "", str(text)
+
+
 @dataclass
 class Watch:
     name: str
     addr: int
     size: int = 1
     signed: bool = False
+    space: str = ""      # "" = espaço da CPU; cgram | vram | oam = offset na memória do PPU
 
     @classmethod
     def from_spec(cls, spec: dict | str) -> "Watch":
-        """Aceita {"name","addr","size","signed"} ou "nome=7E:0096:2s" (tamanho e 's' opcionais)."""
+        """Aceita {"name","addr","size","signed"} ou "nome=7E:0096:2s" (tamanho e 's' opcionais). Paleta, VRAM e
+        OAM levam prefixo e offset em bytes: "gi=cgram:01D2:2" (cor 233 = bytes $1D2-$1D3 da CGRAM)."""
         if isinstance(spec, str):
             import re
             name, _, rest = spec.partition("=")
+            space, rest = _split_space(rest)
             parts = rest.strip().split(":")
             size_txt = "1"
-            if len(parts) == 3:                                   # BB:AAAA:tamanho
+            if space:
+                if len(parts) > 2:
+                    raise FabError(f"watch inválido: {spec!r}", f"formato nome={space}:OFFSET[:1|2|4][s]")
+                addr_txt, size_txt = parts[0], parts[1] if len(parts) == 2 else "1"
+            elif len(parts) == 3:                                 # BB:AAAA:tamanho
                 addr_txt, size_txt = parts[0] + ":" + parts[1], parts[2]
             elif len(parts) == 2 and re.fullmatch(r"[124]s?", parts[1]) and len(parts[0].lstrip("$")) > 2:
                 addr_txt, size_txt = parts                        # $BBAAAA:tamanho
@@ -118,17 +136,71 @@ class Watch:
                 addr_txt = parts[0]
             if not re.fullmatch(r"[124]s?", size_txt):
                 raise FabError(f"watch inválido: {spec!r}", "formato nome=BB:AAAA[:1|2|4][s] (s = com sinal)")
-            return cls(name.strip(), parse_addr(addr_txt), int(size_txt.rstrip("s")), size_txt.endswith("s"))
-        return cls(spec["name"], parse_addr(spec["addr"]), int(spec.get("size", 1)), bool(spec.get("signed", False)))
+            w = cls(name.strip(), parse_addr(addr_txt), int(size_txt.rstrip("s")), size_txt.endswith("s"), space)
+        else:
+            space, addr_txt = _split_space(spec["addr"])
+            w = cls(spec["name"], parse_addr(addr_txt), int(spec.get("size", 1)), bool(spec.get("signed", False)), space)
+        if w.space and w.addr + w.size > PPU_SPACES[w.space][1]:
+            raise FabError(f"watch {w.name}: {w.space}:{w.addr:04X} passa do fim da {w.space.upper()} "
+                           f"(${PPU_SPACES[w.space][1]:X} bytes)", "o offset é em bytes: cor n da CGRAM = 2·n")
+        return w
 
     def lua(self) -> dict:
+        if self.space:
+            return {"name": self.name, "mem": PPU_SPACES[self.space][0], "offset": self.addr, "size": self.size,
+                    "signed": self.signed}
         off = wram_offset(self.addr)
         if off is not None:
             return {"name": self.name, "mem": "snesWorkRam", "offset": off, "size": self.size, "signed": self.signed}
         return {"name": self.name, "mem": "snesDebug", "offset": self.addr, "size": self.size, "signed": self.signed}
 
     def to_dict(self) -> dict:
-        return {"name": self.name, "addr": fmt_addr(self.addr), "size": self.size, "signed": self.signed}
+        addr = f"{self.space}:{self.addr:04X}" if self.space else fmt_addr(self.addr)
+        return {"name": self.name, "addr": addr, "size": self.size, "signed": self.signed}
+
+
+@dataclass
+class Poke:
+    """Escrita de um valor num frame: "60:cgram:01D2:2=0x03E0" ou {"frame","addr","value","size"}."""
+    frame: int
+    addr: int
+    value: int
+    size: int = 1
+    space: str = ""      # "" = espaço da CPU; cgram | vram | oam = offset na memória do PPU
+
+    @classmethod
+    def from_spec(cls, spec: dict | str) -> "Poke":
+        if isinstance(spec, str):
+            left, sep, value_txt = spec.partition("=")
+            frame_txt, sep2, rest = left.partition(":")
+            if not (sep and sep2):
+                raise FabError(f"poke inválido: {spec!r}", "formato FRAME:ENDEREÇO=VALOR, ex.: 60:cgram:01D2:2=0x03E0")
+            try:
+                value = int(value_txt.strip(), 0)
+                frame = int(frame_txt)
+            except ValueError:
+                raise FabError(f"poke inválido: {spec!r}", "FRAME e VALOR têm de ser números (0x… aceita hexadecimal)")
+            w = Watch.from_spec("poke=" + rest.strip())      # mesmo parser dos watches (espaço, tamanho, limites)
+            if w.signed:
+                raise FabError(f"poke inválido: {spec!r}", "valor com sinal não faz sentido num poke")
+            return cls(frame, w.addr, value, w.size, w.space)
+        space, addr_txt = _split_space(spec["addr"])
+        size = spec.get("size")
+        if space:                                    # "cgram:0160", "cgram:0160:2" ou size explícito
+            text = str(spec["addr"]).strip()
+            if size is not None and len(text.split(":")) == 2:
+                text = f"{text}:{int(size)}"
+            w = Watch.from_spec("poke=" + text)
+            return cls(int(spec["frame"]), w.addr, int(spec["value"]), w.size, space)
+        return cls(int(spec["frame"]), parse_addr(addr_txt), int(spec["value"]), int(size or 1))
+
+    def lua(self) -> dict:
+        if self.space:
+            return {"frame": self.frame, "mem": PPU_SPACES[self.space][0], "offset": self.addr,
+                    "value": self.value, "size": self.size}
+        off = wram_offset(self.addr)
+        mem, offset = ("snesWorkRam", off) if off is not None else ("snesDebug", self.addr)
+        return {"frame": self.frame, "mem": mem, "offset": offset, "value": self.value, "size": self.size}
 
 
 @dataclass
@@ -169,32 +241,52 @@ class Job:
     probes: list[Probe] = field(default_factory=list)
     capture_every: int = 1
     capture_start: int = 0
+    warmup: int = 0                                  # frames iniciais sem medir (state traz RAM velha)
     wram_every: int = 0
-    pokes: list[dict] = field(default_factory=list)  # {"frame", "addr", "value", "size"}
+    pokes: list["Poke"] = field(default_factory=list)  # escritas pontuais (Poke)
     save_end: Path | None = None
     save_at: list[dict] = field(default_factory=list)  # {"frame", "path"}
     cdl_out: Path | None = None                         # dump do Code/Data Log da ROM no fim
+    ppu_frames: list[int] = field(default_factory=list)   # snapshot OAM+CGRAM+VRAM nestes frames
+    ppu_every: int = 0                                    # … ou a cada N frames medidos
+    false_color: list[int] = field(default_factory=list)  # frames com a CGRAM em falsa cor (índice por píxel)
+    capture_frames: list[int] = field(default_factory=list)  # frames avulsos a capturar (além de capture_every)
+    wram_frames: list[int] = field(default_factory=list)     # frames avulsos com dump da WRAM
+    dma_log: bool = False                                     # registra cada DMA/HDMA (fonte, destino, quem dispara)
+    vram_uploads: bool = False                                # grava o que cada DMA deixou na VRAM (export de gráficos)
 
     def to_lua_table(self, out_dir: Path, rom=None) -> dict:
         probes = []
         for p in self.probes:
             probes.extend(p.lua(rom))
-        pokes = []
-        for pk in self.pokes:
-            addr = parse_addr(pk["addr"])
-            off = wram_offset(addr)
-            mem, offset = ("snesWorkRam", off) if off is not None else ("snesDebug", addr)
-            pokes.append({"frame": int(pk["frame"]), "mem": mem, "offset": offset,
-                          "value": int(pk["value"]), "size": int(pk.get("size", 1))})
-        return {
+        pokes = [pk.lua() for pk in self.pokes]
+        extra = {}
+        if self.ppu_frames or self.ppu_every:
+            extra["ppu_frames"] = sorted({int(f) for f in self.ppu_frames})
+            extra["ppu_every"] = int(self.ppu_every)
+        if self.false_color:
+            from .ppu import FALSE_COLORS
+            extra["false_color"] = sorted({int(f) for f in self.false_color})
+            extra["false_color_values"] = list(FALSE_COLORS)
+        if self.wram_frames:
+            extra["wram_frames"] = sorted({int(f) for f in self.wram_frames})
+        if self.dma_log or self.vram_uploads:
+            extra["dma_log"] = True
+        if self.vram_uploads:
+            extra["vram_uploads"] = True
+        capture = {"every": int(self.capture_every), "start": int(self.capture_start)}
+        if self.capture_frames:
+            capture["frames"] = sorted({int(f) for f in self.capture_frames})
+        return extra | {
             "harness_version": HARNESS_VERSION,
             "out_dir": out_dir.as_posix(),
             "frames": int(self.frames),
+            "warmup": int(self.warmup),
             "state": self.state.as_posix() if self.state else None,
             "macro": [[int(n), int(m)] for n, m in self.macro],
             "watch": [w.lua() for w in self.watches],
             "probes": probes,
-            "capture": {"every": int(self.capture_every), "start": int(self.capture_start)},
+            "capture": capture,
             "wram_every": int(self.wram_every),
             "pokes": pokes,
             "save_end": self.save_end.as_posix() if self.save_end else None,
@@ -205,7 +297,7 @@ class Job:
 
 def resolve_mem_names(table: dict) -> dict:
     """O harness resolve nomes de memType em runtime; aqui só validamos os nomes usados."""
-    valid = {"snesWorkRam", "snesDebug", "snesMemory", "snesPrgRom", "snesSaveRam"}
+    valid = {"snesWorkRam", "snesDebug", "snesMemory", "snesPrgRom", "snesSaveRam", *(m for m, _ in PPU_SPACES.values())}
     for group in ("watch", "probes", "pokes"):
         for item in table.get(group, []):
             if item["mem"] not in valid:
@@ -233,6 +325,8 @@ def run_job(rom_path: Path, job: Job, out_dir: Path, rom_image=None, timeout_s: 
     out_dir.mkdir(parents=True, exist_ok=True)
     if job.frames <= 0:
         raise FabError("o job precisa de frames > 0")
+    if not 0 <= job.warmup < job.frames:
+        raise FabError(f"warmup inválido: {job.warmup}", f"tem de ser 0 <= warmup < frames ({job.frames})")
     if job.state and not Path(job.state).is_file():
         raise FabError(f"savestate não encontrado: {job.state}", "lista com `fab state list <jogo>`")
     # cópia com nome único: isola SRAM/workspace do Mesen por run e documenta o que correu
@@ -245,6 +339,8 @@ def run_job(rom_path: Path, job: Job, out_dir: Path, rom_image=None, timeout_s: 
         timeout_s = 30 + job.frames // 25
         if job.wram_every:
             timeout_s += int(job.frames / job.wram_every * 0.3)
+        n_ppu = len(set(job.ppu_frames)) + (job.frames // job.ppu_every if job.ppu_every else 0)
+        timeout_s += int(n_ppu * 0.4)
     cmd = [tc.mesen, "--testRunner", f"--timeout={timeout_s}", LUA / "harness.lua", run_rom]
     proc = run(cmd, env={"SNESFAB_JOB": (out_dir / "job.lua").as_posix()}, timeout=timeout_s + 60)
     _cleanup_mesen_artifacts(tc.mesen_dir, run_rom.stem)
@@ -323,6 +419,62 @@ def read_probes(run_dir: Path) -> list[dict]:
     return out
 
 
+PPU_SNAPSHOT_SIZE = 0x220 + 0x200 + 0x10000     # OAM + CGRAM + VRAM
+
+
+@dataclass
+class PpuSnapshot:
+    """Memória do PPU no momento em que o frame foi desenhado (ver harness: display ligado)."""
+    frame: int
+    oam: bytes
+    cgram: bytes
+    vram: bytes
+    meta: dict            # event (start | irq@N | end), scanline, oamMode, oamBaseAddress, oamAddressOffset, …
+
+    @property
+    def obj_mode(self) -> int:
+        return int(self.meta.get("oamMode") or 0)
+
+    @property
+    def obj_base(self) -> int:
+        return int(self.meta.get("oamBaseAddress") or 0)
+
+    @property
+    def obj_offset(self) -> int:
+        return int(self.meta.get("oamAddressOffset") or 0x1000)
+
+
+def read_ppu(run_dir: Path) -> dict[int, PpuSnapshot]:
+    """Snapshots do PPU de uma run (ppu.bin + ppu_index.jsonl), por frame."""
+    run_dir = Path(run_dir)
+    idx, raw = run_dir / "ppu_index.jsonl", run_dir / "ppu.bin"
+    if not idx.exists() or not raw.exists():
+        return {}
+    data = raw.read_bytes()
+    out = {}
+    with open(idx, encoding="utf-8") as f:
+        for i, line in enumerate(x for x in f if x.strip()):
+            meta = json.loads(line)
+            base = i * PPU_SNAPSHOT_SIZE
+            chunk = data[base:base + PPU_SNAPSHOT_SIZE]
+            if len(chunk) < PPU_SNAPSHOT_SIZE:
+                break
+            out[int(meta["frame"])] = PpuSnapshot(int(meta["frame"]), chunk[:0x220], chunk[0x220:0x420],
+                                                  chunk[0x420:], meta)
+    return out
+
+
+def read_wram(run_dir: Path) -> dict[int, bytes]:
+    """Dumps de WRAM (128 KiB cada) de uma run, por frame (precisa do wram_index.csv do harness)."""
+    run_dir = Path(run_dir)
+    idx, raw = run_dir / "wram_index.csv", run_dir / "wram.bin"
+    if not idx.exists() or not raw.exists():
+        return {}
+    data = raw.read_bytes()
+    frames = [int(x) for x in idx.read_text(encoding="utf-8").split()[1:]]
+    return {f: data[i * 0x20000:(i + 1) * 0x20000] for i, f in enumerate(frames) if (i + 1) * 0x20000 <= len(data)}
+
+
 def job_from_scenario(sc: dict, base_dir: Path, game_dir: Path | None = None) -> Job:
     """Constrói um Job a partir de um cenário (mod.json → scenarios[]) ou de opções da CLI."""
     def resolve(p):
@@ -354,6 +506,10 @@ def job_from_scenario(sc: dict, base_dir: Path, game_dir: Path | None = None) ->
                       int(p.get("max_hits", 500)), p.get("label", "")) for p in sc.get("probes", [])],
         capture_every=int(cap.get("every", 2)),
         capture_start=int(cap.get("start", 0)),
+        warmup=int(sc.get("warmup", 0)),
         wram_every=int(sc.get("wram_every", 0)),
-        pokes=sc.get("pokes", []),
+        pokes=[Poke.from_spec(p) for p in sc.get("pokes", [])],
+        wram_frames=[int(f) for f in sc.get("wram_frames", [])],
+        ppu_frames=[int(f) for f in sc.get("ppu_frames", [])],
+        false_color=[int(f) for f in sc.get("false_color", [])],
     )

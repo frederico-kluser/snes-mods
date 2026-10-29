@@ -126,6 +126,7 @@ Reset:
     %vram_dma(ObjTilesTop, $0000, $0040)       ; tiles 0,1  (metade de cima do 16x16)
     %vram_dma(ObjTilesBottom, $0100, $0040)    ; tiles 16,17 (metade de baixo)
     %vram_dma(BgTiles, $1000, $0080)           ; BG1: 0 vazio, 1 relva, 2 marca, 3 terra
+    jsr WramUpload                             ; tiles $80-$83 montados na WRAM antes do DMA
 
     ; paletas
     stz $2121
@@ -403,6 +404,69 @@ BgPalette:
     dw $7E8C, $1304, $7FFF, $1150      ; céu, relva, branco, terra
 ObjPalette:
     dw $0000, $109F, $7FFF             ; (transparente), vermelho, branco
+
+; ── gráfico montado na WRAM antes do DMA: o caminho dos jogos que descomprimem por software ──
+; "descomprime" 4 tiles (a ROM guarda o desenho invertido, então ele NÃO está cru na ROM) em DOIS gráficos de 2
+; tiles que passam pelo MESMO buffer ($7F:0000, 64 B) e pelo MESMO disparo de DMA: palavra $0800 = tiles $80/$81 e
+; $0820 = tiles $82/$83 (sem sprite na tela). Existe para testar o export do tileset e o override de gráfico com
+; fonte na WRAM (`fab gfx override`): a impressão digital tem de separar os dois conteúdos do buffer.
+WramUpload:
+    php
+    phb
+    rep #$30
+    ldx.w #$0000
+    lda.w #$0800                       ; tiles $80/$81
+    jsr .um
+    ldx.w #$0040
+    lda.w #$0820                       ; tiles $82/$83
+    jsr .um
+    plb
+    plp
+    rts
+.um                                    ; X = offset em WramTiles, A = palavra de destino na VRAM (m16,x16)
+    sta $2116
+    phb
+    pea.w $7F7F
+    plb
+    plb                                ; DBR = $7F: o buffer
+    ldy.w #$0000
+-   lda.l WramTiles,x
+    eor.w #$FFFF                       ; "descompressão" por software: a ROM guarda o desenho invertido
+    sta $0000,y
+    inx
+    inx
+    iny
+    iny
+    cpy.w #$0040
+    bne -
+    plb                                ; DBR de volta (registradores)
+    lda.w #$0000                       ; fonte $7F:0000: o MESMO buffer para os dois gráficos
+    sta $4302
+    lda.w #$0040
+    sta $4305
+    sep #$20
+    lda.b #$7F
+    sta $4304
+    lda.b #$80
+    sta $2115
+    lda.b #$01
+    sta $4300
+    lda.b #$18
+    sta $4301
+    lda.b #$01
+    sta $420B                          ; o MESMO disparo para os dois gráficos
+    rep #$20
+    rts
+
+WramTiles:                             ; invertidos (NOT)
+    db $55,$AA,$AA,$55,$55,$AA,$AA,$55,$55,$AA,$AA,$55,$55,$AA,$AA,$55   ; tile $80: xadrez (cores 1/2)
+    db $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+    db $7F,$7F,$BF,$BF,$DF,$DF,$EF,$EF,$F7,$F7,$FB,$FB,$FD,$FD,$FE,$FE   ; tile $81: diagonal (cor 3)
+    db $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+    db $00,$FF,$7E,$FF,$7E,$FF,$7E,$FF,$7E,$FF,$7E,$FF,$7E,$FF,$00,$FF   ; tile $82: moldura (cor 1)
+    db $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+    db $FF,$00,$FF,$FF,$FF,$00,$FF,$FF,$FF,$00,$FF,$FF,$FF,$00,$FF,$FF   ; tile $83: listras (cor 2)
+    db $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
 
 ; ── rotina de pulo nos endereços do guia ────────────────────────────────────
 org $80A41E

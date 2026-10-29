@@ -1,3 +1,4 @@
-# gerido por coala-agent-skill — política git: ignore
+# gerido por coala-agent-skill — política git: track-dump
 *
 !.gitignore
+!coala.canonical.jsonl

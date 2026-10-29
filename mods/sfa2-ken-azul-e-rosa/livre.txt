@@ -1,0 +1,3 @@
+# luta sem comandos (P1 parado): mostra as poses de defesa, dano, queda e levantamento
+# que o macro luta.txt não alcança (os tiles de luva dessas poses só aparecem na luta livre)
+600

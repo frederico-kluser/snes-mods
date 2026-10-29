@@ -1,0 +1,210 @@
+{
+  "baseline_run": "runs/baselines/sfa2/luta-soco-f0f2e9b3e626a2bd",
+  "mod_run": "runs/cycles/sfa2-ken-azul-e-rosa/cycle-003-luta-soco",
+  "frames_compared": 140,
+  "first_divergence_frame": 44,
+  "frames_divergent": 139,
+  "mean_changed_pct": 1.552,
+  "max_changed_pct": 1.908,
+  "max_changed_frame": 300,
+  "compare_sheet": "cycles/sfa2-ken-azul-e-rosa/cycle-003/luta-soco/compare.png",
+  "divergence_plot": "cycles/sfa2-ken-azul-e-rosa/cycle-003/luta-soco/divergence.png",
+  "trace_plot": "cycles/sfa2-ken-azul-e-rosa/cycle-003/luta-soco/trace_compare.png",
+  "trace_stats": {
+    "gi1": {
+      "mod": {
+        "min": 32262,
+        "max": 32262,
+        "first": 32262,
+        "last": 32262
+      },
+      "baseline": {
+        "min": 286,
+        "max": 286,
+        "first": 286,
+        "last": 286
+      },
+      "first_diff_frame": 0
+    },
+    "gi2": {
+      "mod": {
+        "min": 28930,
+        "max": 28930,
+        "first": 28930,
+        "last": 28930
+      },
+      "baseline": {
+        "min": 27,
+        "max": 27,
+        "first": 27,
+        "last": 27
+      },
+      "first_diff_frame": 0
+    },
+    "gi3": {
+      "mod": {
+        "min": 24737,
+        "max": 24737,
+        "first": 24737,
+        "last": 24737
+      },
+      "baseline": {
+        "min": 23,
+        "max": 23,
+        "first": 23,
+        "last": 23
+      },
+      "first_diff_frame": 0
+    },
+    "gi4": {
+      "mod": {
+        "min": 20576,
+        "max": 20576,
+        "first": 20576,
+        "last": 20576
+      },
+      "baseline": {
+        "min": 19,
+        "max": 19,
+        "first": 19,
+        "last": 19
+      },
+      "first_diff_frame": 0
+    },
+    "gi5": {
+      "mod": {
+        "min": 17472,
+        "max": 17472,
+        "first": 17472,
+        "last": 17472
+      },
+      "baseline": {
+        "min": 17,
+        "max": 17,
+        "first": 17,
+        "last": 17
+      },
+      "first_diff_frame": 0
+    },
+    "pele": {
+      "mod": {
+        "min": 12956,
+        "max": 12956,
+        "first": 12956,
+        "last": 12956
+      },
+      "baseline": {
+        "min": 12956,
+        "max": 12956,
+        "first": 12956,
+        "last": 12956
+      },
+      "first_diff_frame": null
+    },
+    "cabelo": {
+      "mod": {
+        "min": 4830,
+        "max": 4830,
+        "first": 4830,
+        "last": 4830
+      },
+      "baseline": {
+        "min": 4830,
+        "max": 4830,
+        "first": 4830,
+        "last": 4830
+      },
+      "first_diff_frame": null
+    },
+    "contorno": {
+      "mod": {
+        "min": 2114,
+        "max": 2114,
+        "first": 2114,
+        "last": 2114
+      },
+      "baseline": {
+        "min": 2114,
+        "max": 2114,
+        "first": 2114,
+        "last": 2114
+      },
+      "first_diff_frame": null
+    },
+    "hadouken": {
+      "mod": {
+        "min": 31710,
+        "max": 31710,
+        "first": 31710,
+        "last": 31710
+      },
+      "baseline": {
+        "min": 31710,
+        "max": 31710,
+        "first": 31710,
+        "last": 31710
+      },
+      "first_diff_frame": null
+    },
+    "rose": {
+      "mod": {
+        "min": 4104,
+        "max": 4104,
+        "first": 4104,
+        "last": 4104
+      },
+      "baseline": {
+        "min": 4104,
+        "max": 4104,
+        "first": 4104,
+        "last": 4104
+      },
+      "first_diff_frame": null
+    },
+    "x1": {
+      "mod": {
+        "min": 283,
+        "max": 465,
+        "first": 283,
+        "last": 465
+      },
+      "baseline": {
+        "min": 283,
+        "max": 465,
+        "first": 283,
+        "last": 465
+      },
+      "first_diff_frame": null
+    },
+    "hp1": {
+      "mod": {
+        "min": 119,
+        "max": 144,
+        "first": 144,
+        "last": 119
+      },
+      "baseline": {
+        "min": 119,
+        "max": 144,
+        "first": 144,
+        "last": 119
+      },
+      "first_diff_frame": null
+    },
+    "hp2": {
+      "mod": {
+        "min": 129,
+        "max": 144,
+        "first": 144,
+        "last": 129
+      },
+      "baseline": {
+        "min": 129,
+        "max": 144,
+        "first": 144,
+        "last": 129
+      },
+      "first_diff_frame": null
+    }
+  }
+}

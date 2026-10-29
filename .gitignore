@@ -15,6 +15,13 @@ work/
 cycles/**/*.png
 cycles/**/*.mp4
 games/*/states/
+games/*/prints/
+games/*/exports/
+games/*/parts/
+
+# ── material derivado de ROM comercial (arte/bytes de tiles): NUNCA versionar ──
+mods/*/paint.json
+mods/*/gfx_override*.bin
 media/inbox/*
 !media/inbox/.gitkeep
 

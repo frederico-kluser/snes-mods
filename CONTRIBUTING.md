@@ -27,6 +27,9 @@ git remote add upstream https://github.com/frederico-kluser/snes-mods.git
 ./fab selftest   # testes unitários + ponta a ponta (MesenCE headless com a ROM de teste)
 ```
 
+No PowerShell, `powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 -SelfTest` faz tudo isso de uma vez e
+recria a memória CoALA a partir do dump versionado.
+
 No PowerShell use `.\fab.ps1`; no cmd, `fab.cmd`. Na primeira execução o wrapper cria a `.venv`
 com `requirements.txt`. Ferramentas de desenvolvimento: `pip install -r requirements-dev.txt`. As dependências são fixadas
 com hash a partir de `requirements*.in` (`pip-compile --generate-hashes`); o Dependabot mantém os dois.
@@ -75,8 +78,11 @@ python -m unittest discover -s tests -t .     # testes unitários (qualquer SO)
 - Funcionalidades que mexem no emulador/ciclo devem ser exercitadas com a ROM de teste
   (`fixtures/testbed/testbed.asm` + `mods/testbed-double-jump/`).
 - Se o comportamento mudar, atualize a documentação dos agentes: as skills em
-  `.agents/snes-mod-*`, `.agents/snes-rea-modder` e o `CLAUDE.md`/`AGENTS.md` (espelhados).
+  `.agents/` (`snes-mod-factory`, `snes-mod-cycle`, `snes-sprite-paint`, `pixel-peep`) e o `CLAUDE.md`/`AGENTS.md` (espelhados).
 - Workflows: actions fixadas por SHA, `permissions` mínimas e `timeout-minutes` em todo job.
+- Decisão de arquitetura nova (ou mudada) vira ADR em [`docs/decisoes.md`](docs/decisoes.md).
+- Aprendizado durável vai para a memória CoALA (`coala.py add`); antes de commitar, `./fab memory dump` — o dump
+  `coala.canonical.jsonl` é versionado e o `fab doctor` acusa quando está desatualizado.
 
 ### Fuzzing
 
@@ -107,4 +113,4 @@ Crash corrigido vira teste de regressão em `tests/test_unit.py`, e a entrada va
 
 Ao contribuir, você concorda que sua contribuição é licenciada sob a [MIT](LICENSE), como o restante
 do projeto. Ferramentas de terceiros baixadas pelo `fab setup` mantêm suas próprias licenças e não
-são redistribuídas por este repositório.
+são redistribuídas por este repositório ([THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).

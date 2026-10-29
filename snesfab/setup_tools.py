@@ -271,10 +271,15 @@ def doctor(quick: bool = False, rea: bool = False) -> dict:
     # ROMs nunca versionadas
     try:
         tracked = run(["git", "-C", ROOT, "ls-files"], timeout=30).stdout.splitlines()
-        bad = [f for f in tracked if f.lower().endswith((".sfc", ".smc", ".swc", ".fig", ".mss", ".srm", ".bps"))]
-        add("OK" if not bad else "FAIL", "git sem ROMs/states", ", ".join(bad[:5]) or "nenhum arquivo proibido versionado")
+        bad = [f for f in tracked if f.lower().endswith((".sfc", ".smc", ".swc", ".fig", ".mss", ".srm", ".bps",
+                                                         ".sqlite", ".sqlite-wal", ".sqlite-shm"))
+               or (f.startswith("games/") and f.split("/")[2:3] == ["prints"])]   # prints = frames do jogo
+        add("OK" if not bad else "FAIL", "git sem ROMs/states/prints/base", ", ".join(bad[:5]) or "nenhum arquivo proibido versionado")
     except FabError:
         add("WARN", "git", "não consegui listar arquivos")
+    from . import memory
+    state, detail = memory.dump_state()
+    add({"ok": "OK", "stale": "WARN", "absent": "WARN"}.get(state, "FAIL"), "memória CoALA no git (dump)", detail)
     mcp = ROOT / ".mcp.json"
     reapkg = REA_PKG / "package.json"
     add("OK" if reapkg.exists() else "WARN", "rea-agents (tools/rea)", read_json(reapkg).get("version") if reapkg.exists() else "fab setup")
