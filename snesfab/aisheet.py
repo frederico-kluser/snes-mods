@@ -21,10 +21,9 @@ Decisões de design (evidência em pesquisas/2026-10-28-…-snes-16-cores-4b.md)
 
 from __future__ import annotations
 
-import base64
 import json
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -512,7 +511,7 @@ def _export_report(mapa: dict, name: str, bloco: int) -> str:
          f"- folha expandida: `{im['arquivo']}` {im['largura']}x{im['altura']} (bloco {bloco}x{bloco} por píxel de arte)",
          f"- folha de referência 1 px: `{im['referencia_1px']}`",
          f"- mapa de coordenadas: `map.json` ({gr['total_poses']} poses, {len(mapa['tiles'])} tiles únicos)",
-         f"- prompt: `prompt.md` (EN para colar no Nano Banana + PT)",
+         "- prompt: `prompt.md` (EN para colar no Nano Banana + PT)",
          f"- grelha: {gr['colunas']}x{gr['linhas']} células de {gr['celula'][0]}x{gr['celula'][1]} px de arte; "
          f"fundo {im['fundo']} = transparência (índice 0)", "",
          "## Poses", "", "| id | frame | célula | caixa expandida | píxeis | tiles | vezes |", "|---|---|---|---|---|---|---|"]
@@ -669,7 +668,7 @@ def import_sheet(mapa: dict, image_path: Path, out_dir: Path, *, limpar: str = "
             "pixeis_alterados": plano["pixeis_alterados"], "blocos_sujos": stats["sujos"],
             "conflitos": len(conflitos), "fora_do_alvo": len(fora), "estatisticas": stats,
             "alinhamento": plano["alinhamento"],
-            "proximo": (f"confira check.png/report.md; depois: fab ai import --map … --image … --mod mods/<id> "
+            "proximo": ("confira check.png/report.md; depois: fab ai import --map … --image … --mod mods/<id> "
                         "--name <nome> --evidence '…'  →  fab build  →  fab paint check")}
 
 
@@ -747,7 +746,6 @@ def _build_plan(mapa: dict, new_indices: dict[str, np.ndarray]) -> tuple[dict, l
             conflitos.append({"tile": h, "erro": "bytes do tile ausentes no map.json"})
             continue
         arr = ppu.decode_4bpp(bytes.fromhex(raw))
-        orig_arr = arr.copy()
         for tpx, val in pxmap.items():
             arr[tpx // 8, tpx % 8] = val
         tiles.append({"hash": h, "original": raw, "novo": ppu.encode_4bpp(arr).hex(),

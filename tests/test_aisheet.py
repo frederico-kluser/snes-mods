@@ -104,7 +104,7 @@ class ExportTests(unittest.TestCase):
         cores = [ppu.bgr555_to_rgb(v) for v in CORES[1:]]
         dists = [sum((a - b) ** 2 for a, b in zip(rgb, c)) for c in cores]
         self.assertGreater(min(dists), 40 * 40 * 3, "o fundo calculado tem de ficar LONGE de toda a paleta")
-        res = aisheet.export_sheet([self.pose1], CORES, self.dir, "auto", bloco=8)
+        aisheet.export_sheet([self.pose1], CORES, self.dir, "auto", bloco=8)
         mapa = json.loads((self.dir / "map.json").read_text(encoding="utf-8"))
         self.assertEqual(mapa["imagem"]["fundo"], fundo)
         txt = (self.dir / "prompt.md").read_text(encoding="utf-8")
@@ -195,7 +195,6 @@ class ImportTests(unittest.TestCase):
     def test_conflito_entre_poses_e_reportado(self):
         # as duas poses usam tiles diferentes; força o MESMO tile nas duas com edições divergentes
         mapa = json.loads((self.dir / "map.json").read_text(encoding="utf-8"))
-        h = mapa["poses"][0]["tiles"][0]["hash"]
         mapa["poses"][1]["tiles"] = [dict(mapa["poses"][0]["tiles"][0], x=0, y=0)]
         img = np.asarray(Image.open(self.sheet).convert("RGB")).copy()
         cores_rgb = {c["indice"]: tuple(int(c["cor"].lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))

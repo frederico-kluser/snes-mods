@@ -23,7 +23,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from pixel_grid import bgr555_rgb, dist, load_palette  # noqa: E402
+from pixel_grid import dist, load_palette  # noqa: E402
 
 
 def main() -> int:
